@@ -44,7 +44,7 @@ from nems.web.account_management.views import get_current_user
 #from nems.keyword_rules import keyword_test_routine
 from nems.web.run_custom.script_utils import scan_for_scripts
 from nems.utilities.print import web_print
-from nems_config.defaults import UI_OPTIONS
+from nems_config.defaults import UI_OPTIONS, DEMO_MODE
 n_ui = UI_OPTIONS
 
 try:
@@ -682,16 +682,21 @@ def check_analysis_exists():
     session = Session()
     
     nameEntered = request.args.get('nameEntered')
+    analysisId = request.args.get('analysisId')
     
+    exists = False
     result = (
             session.query(NarfAnalysis)
             .filter(NarfAnalysis.name == nameEntered)
             .first()
             )
              
-    if result is None:
-        exists = False
-    else:
+    # only set to True if id is different, so that
+    # overwriting own analysis doesn't cause flag
+    if result and (
+            analysisId == '__none' or
+            (int(result.id) != int(analysisId))
+            ):
         exists = True
         
     session.close()
@@ -771,6 +776,18 @@ def get_preview():
     cSelected = request.args.getlist('cSelected[]')
     mSelected = request.args.getlist('mSelected[]')
 
+    # if using demo database, get preview image from aws public bucket
+    if DEMO_MODE:
+        s3_client = boto3.client('s3')
+        key = (
+                'nems_saved_images/batch291/{0}/{1}.png'
+                .format(cSelected[0], mSelected[0])
+                )
+        print("Inside get_preview, passed DEMO_MODE check. Key is: {0}".format(key))
+        fileobj = s3_client.get_object(Bucket='nemspublic', Key=key)
+        image=str(b64encode(fileobj['Body'].read()))[2:-1]
+        return jsonify(image=image)
+    
     figurefile = None
     # only need this to be backwards compatible with NARF preview images?
     path = (
@@ -788,7 +805,7 @@ def get_preview():
         figurefile = str(path.figurefile)
         session.close()
     
-    # TODO: Make this not ugly.
+    # TODO: Make this not ugly, and incorporate check for sample images
     
     if AWS:
         s3_client = boto3.client('s3')
@@ -877,3 +894,99 @@ def set_saved_selections():
     session.close()
     
     return jsonify(response='selections saved', null=False)
+
+
+############ jerb test #################
+    
+@app.route('/jerb_viewer')
+def jerb_viewer():
+    jerb_json = make_jerb_json()
+    return render_template('jerb_test.html', json=jerb_json)
+
+
+def make_jerb_json():
+    
+    user = get_current_user()
+    
+    session = Session()
+    
+    # .all() returns a list of tuples, so it's necessary to pull the
+    # name elements out into a list by themselves.
+    analyses = (
+            session.query(NarfAnalysis)
+            .filter(or_(
+                    int(user.sec_lvl) == 9,
+                    NarfAnalysis.public == '1',
+                    NarfAnalysis.labgroup.ilike('%{0}%'.format(user.labgroup)),
+                    NarfAnalysis.username == user.username,
+                    ))
+            .order_by(asc(NarfAnalysis.id))
+            .all()
+            )
+    analysislist = [
+            a.name for a in analyses
+            ]
+
+    batchids = [
+            i[0] for i in
+            session.query(NarfBatches.batch)
+            .distinct()
+            #.filter(or_(
+            #        int(user.sec_lvl) == 9,
+            #        NarfBatches.public == '1',
+            #        NarfBatches.labgroup.ilike('%{0}%'.format(user.labgroup)),
+            #        NarfBatches.username == user.username,
+            #        ))
+            .all()
+            ]
+    batchnames = []
+    for i in batchids:
+        name = (
+                session.query(sBatch.name)
+                .filter(sBatch.id == i)
+                .first()
+                )
+        if not name:
+            batchnames.append('')
+        else:
+            batchnames.append(name.name)
+    batchlist = [
+            (batch + ': ' + batchnames[i])
+            for i, batch in enumerate(batchids)
+            ]
+    batchlist.sort()
+    
+    session.close()
+    
+    s3 = boto3.resource('s3')
+    bucket = s3.Bucket('nemsdata')
+    
+    jerb_json = {'name':'Analysis',
+            'children':[],
+            }
+    
+    for i, analysis in enumerate(analysislist):
+        jerb_json['children'].append({'name':analysis, 'children':[]})
+        jerb_json['children'][i]['children'].extend([
+                {'name':'batch', 'children':[
+                        {'name':batch, 'leaf':1}
+                        for batch in batchlist
+                        ]
+                }, {'name':'models', 'children':[
+                        {'name':model, 'leaf':1}
+                        for model in ['fake','model','list']
+                        ]
+                }, {'name':'data', 'children':[
+                        {'name':obj.key.strip('nems_in_cache/batch291/'), 'leaf':1}
+                        for i, obj in enumerate(bucket.objects.filter(
+                                Prefix='nems_in_cache/batch291/'
+                                ))
+                        if i < 20
+                        ]
+                }
+                ])
+        
+    return jerb_json
+    
+    
+    

@@ -2,7 +2,7 @@ import pkgutil
 import importlib
 import inspect
 
-from flask import url_for, Response
+from flask import url_for, Response, jsonify
 from flask_login import login_required
 
 from nems.web.nems_analysis import app
@@ -72,3 +72,23 @@ def site_map():
                 )
         
     return Response(html)
+
+@app.route('/reload_modules')
+@login_required
+def reload_modules():
+    # import the nems.module package at time of routing
+    package = importlib.import_module('nems.modules')
+    # get list of references to modules in nems.modules package
+    modnames = [
+            modname for importer, modname, ispkg
+            in pkgutil.iter_modules(package.__path__)
+            ]
+    mods = [
+            importlib.import_module('nems.modules.{0}'.format(m))
+            for m in modnames
+            ]
+    # for each module in the list, reload it
+    for mod in mods:
+        importlib.reload(mod)
+
+    return jsonify(success=True)

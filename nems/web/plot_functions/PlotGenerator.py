@@ -16,16 +16,16 @@ import math
 import statistics
 import itertools
 
-from bokeh.io import gridplot
+from bokeh.layouts import gridplot
 from bokeh.plotting import figure
 #from bokeh.layouts import widgetbox
 from bokeh.embed import components
 from bokeh.models import (
-        ColumnDataSource, HoverTool, ResizeTool ,SaveTool, WheelZoomTool,
+        ColumnDataSource, HoverTool, SaveTool, WheelZoomTool,
         PanTool, ResetTool, Range1d, FactorRange, Title
         )
-from bokeh.charts import BoxPlot
-from bokeh.models.glyphs import VBar,Circle
+#from bokeh.charts import BoxPlot   #bokeh.charts deprecated by Bokeh
+from bokeh.models.glyphs import VBar, Circle, Glyph
 #from bokeh.models.widgets import DataTable, TableColumn
 import pandas as pd
 import numpy as np
@@ -46,7 +46,7 @@ PLOT_TYPES = [
 # Setting default tools as global variable was causing issues with scatter
 # plot. They're included here for copy-paste as needed instead.
 #tools = [
-#    PanTool(), ResizeTool(), SaveTool(), WheelZoomTool(),
+#    PanTool(), SaveTool(), WheelZoomTool(),
 #    ResetTool(), self.create_hover()
 #    ]
 
@@ -327,7 +327,7 @@ class Scatter_Plot(PlotGenerator):
         # Iterate over a list of tuples representing all unique pairs of models.
         for pair in list(itertools.combinations(modelnames,2)):
             tools = [
-                PanTool(), ResizeTool(), SaveTool(), WheelZoomTool(),
+                PanTool(), SaveTool(), WheelZoomTool(),
                 ResetTool(), self.create_hover(),
                 ]
 
@@ -510,7 +510,7 @@ class Bar_Plot(PlotGenerator):
         dat_source = ColumnDataSource(newData)
         
         tools = [
-                PanTool(), ResizeTool(), SaveTool(), WheelZoomTool(),
+                PanTool(), SaveTool(), WheelZoomTool(),
                 ResetTool(), self.create_hover()
                 ]
         xrange = FactorRange(factors=modelnames)
@@ -562,12 +562,18 @@ class Pareto_Plot(PlotGenerator):
     def create_hover(self):
         hover_html = """
         <div>
-            <span class="hover-tooltip">parameters: $x</span>
+            <span class="hover-tooltip">Model: @modelname</span>
         </div>
         <div>
-            <span class="hover-tooltip">%s value: $y</span>
+            <span class="hover-tooltip">N Parms: @n_parms</span>
         </div>
-        """%self.measure[0]
+        <div>
+            <span class="hover-tooltip">mean {0}: @mean</span>
+        </div>
+        <div>
+            <span class="hover-tooltip">std err: @stderr</span>
+        </div>
+        """.format(self.measure[0])
         
         return HoverTool(tooltips=hover_html)
             
@@ -575,36 +581,80 @@ class Pareto_Plot(PlotGenerator):
         """TODO: write this doc."""
         
         tools = [
-                PanTool(), ResizeTool(), SaveTool(), WheelZoomTool(),
-                ResetTool(), self.create_hover()
+                PanTool(), SaveTool(), WheelZoomTool(),
+                ResetTool(),
                 ]
+        
+        x_values = []
+        y_values = []
+        std_errors = []
+        models = self.data.index.levels[0].tolist()
+        for model in models:
+            values = self.data[self.measure[0]].loc[model].values
+            mean = np.mean(values)
+            stderr = np.around(st.sem(values, nan_policy='omit'), 5)
+            n_parms = self.data['n_parms'].loc[model].values[0]
+            x_values.append(n_parms)
+            y_values.append(mean)
+            std_errors.append(stderr)
             
+        newData = pd.DataFrame.from_dict({
+                'stderr':std_errors, 'mean':y_values, 'n_parms':x_values,
+                'modelname':models,
+                })
+        # Drop any models with NaN values, since that means they had no
+        # performance data for one or more columns.
+        newData.dropna(axis=0, how='any', inplace=True)
+        if newData.size == 0:
+            self.script,self.div = (
+                    "Error, no plot to display.",
+                    "None of the models contained valid performance data."
+                    )
+            return
+        dat_source = ColumnDataSource(newData)
         
-        # TODO: Change this to custom chart type? Not quite the same as narf pareto
-        #       Currently displays bokeh default box plot with built-in
-        #       summary statistics:
-        #       -'whiskers' cover range of values outside of the 0.25 and 0.75
-        #           quartile marks
-        #       -edges of boxes represent 0.25 and 0.75 quartiles
-        #       -line within box represents mean value
-        #       -markers outside of whiskers represent outlier values
-        
-        #       narf version plots line covering mean +/- stdev
-        #       could implement simlar to custom bar above and use either lines
-        #       or narrow rectangles (for better visibility)
-        
-        p = BoxPlot(
-                self.data, values=self.measure[0], label='n_parms',
-                title="Mean Performance (%s) vs Complexity"%self.measure[0],
-                tools=tools, color='n_parms', responsive=True,
-                toolbar_location=TOOL_LOC, toolbar_sticky=TOOL_STICK,
+        p = figure(
+                tools=tools,
+                x_axis_label=("N Parms, model prefix: {0}, "
+                              "suffix: {1}".format(self.pre, self.suf)),
+                y_axis_label=("Mean {0}, +/- Standard Error"
+                              .format(self.measure[0])),
+                title="Mean {0} per Model vs Complexity".format(self.measure[0]),
+                output_backend="svg", sizing_mode='scale_width',
                 )
-            
+                
+        circles = Circle(
+                x='n_parms', y='mean', size=6, fill_color="navy",
+                fill_alpha=0.7,
+                )
+        circle_renderer = p.add_glyph(dat_source, circles)
+        hover = self.create_hover()
+        hover.renderers = [circle_renderer]
+        p.add_tools(hover)
+        #p.circle(x_values, y_values, size=6, color="navy", alpha=0.7)
+        error_bars_x = []
+        error_bars_y = []
+        for i, std in enumerate(std_errors):
+            error_bars_x.append([x_values[i], x_values[i]])
+            error_bars_y.append([y_values[i] - std, y_values[i] + std])
+        p.multi_line(
+                error_bars_x, error_bars_y, color="firebrick",
+                alpha=0.4, line_width=2,
+                )
+
         # workaround to prevent title and toolbar from overlapping
         grid = gridplot(
-            [p], ncols=GRID_COLS, responsive=True,
+            [p], ncols=GRID_COLS, sizing_mode='scale_width'
             )
         self.script, self.div = components(grid)
+        
+        #bokeh.charts deprecated by Bokeh
+        #p = BoxPlot(
+        #        self.data, values=self.measure[0], label='n_parms',
+        #        title="Mean Performance (%s) vs Complexity"%self.measure[0],
+        #        tools=tools, color='n_parms', responsive=True,
+        #        toolbar_location=TOOL_LOC, toolbar_sticky=TOOL_STICK,
+        #        )
 
             
 class Tabular_Plot(PlotGenerator):

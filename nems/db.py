@@ -50,9 +50,11 @@ except Exception as e:
     print('No database info detected')
     print(e)
     path = os.path.dirname(nems_config.defaults.__file__)
-    i = path.find('nems_config')
-    db_path = (path[:i+11] + '/default_db.db')
+    i = path.find('nems/nems_config')
+    db_path = (path[:i+5] + 'nems_sample/demo_db.db')
     db_uri = 'sqlite:///' + db_path + '?check_same_thread=False'
+    nems_config.defaults.DEMO_MODE = True
+    print('Using demo mode: {0}'.format(nems_config.defaults.DEMO_MODE))
 
 try:
     import nems_config.Cluster_Database_Info as clst_db
@@ -73,8 +75,8 @@ except Exception as e:
     print('No cluster database info detected')
     print(e)
     path = os.path.dirname(nems_config.defaults.__file__)
-    i = path.find('nems_config')
-    db_path = (path[:i+11] + '/default_db.db')
+    i = path.find('nems/nems_config')
+    db_path = (path[:i+5] + 'nems_sample/demo_db.db')
     clst_db_uri = 'sqlite:///' + db_path + '?check_same_thread=False'
 
     

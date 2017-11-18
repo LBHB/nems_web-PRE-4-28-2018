@@ -7,10 +7,15 @@ on the results table or what minimum SNR to require for plots by default.
 
 """
 
+from pathlib import Path
 import importlib
 import os
 import nems_sample as ns
+import boto3
 sample_path = os.path.abspath(ns.__file__)[:-11]
+
+# stays false unless changed by db.py if database info is missing
+DEMO_MODE = False
 
 class UI_OPTIONS():
     cols = ['r_test', 'r_fit', 'n_parms']
@@ -40,6 +45,21 @@ class FLASK_DEFAULTS():
     Debug = False
     COPY_PRINTS = False
     CSRF_ENABLED = True
+
+sample_i = sample_path.find('/nems_sample')
+db_path = sample_path[:sample_i] + '/nems_sample/demo_db.db'
+print(db_path)
+db_obj = Path(db_path)
+# Check if sample database exists. If it doesn't, get it from the public s3
+if not db_obj.exists():
+    print("Demo database not found, retrieving....")
+    s3_client = boto3.client('s3')
+    key = "demodb/demo_db.db"
+    fileobj = s3_client.get_object(Bucket='nemspublic', Key=key)
+    with open(db_path, 'wb+') as f:
+        f.write(fileobj['Body'].read())
+        print("Demo database written to: ")
+        print(db_path)
 
 # TODO: Any way to put this outside of the config file and still guarantee
 #       that it gets run?

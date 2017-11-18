@@ -27,6 +27,7 @@ import nems.utilities as ut
 import pkgutil as pk
 
 from nems.web.nems_analysis import app
+from nems_config.defaults import DEMO_MODE
 
 # TODO: reduced size from 12,4 to fit better on smaller res screens, but
 #       need to figure out a good way to resize svgs dynamically for screen size.
@@ -47,7 +48,7 @@ def modelpane_view():
     bSelected = request.form.get('batch')[:3]
     cSelected = request.form.get('cellid')
     mSelected = request.form.get('modelname')
-
+    
     try:
         mp_stack = ut.io.load_single_model(
                 cellid=cSelected, batch=bSelected, modelname=mSelected,

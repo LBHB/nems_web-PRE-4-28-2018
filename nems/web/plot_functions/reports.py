@@ -14,36 +14,89 @@ import scipy as scp
 
 from bokeh.embed import components
 from bokeh.models import (
-        HoverTool, ResizeTool ,SaveTool, WheelZoomTool,
-        PanTool, ResetTool,
+        HoverTool, SaveTool, WheelZoomTool, PanTool, ResetTool,
+        LinearColorMapper, ColumnDataSource, ColorBar, BasicTicker,
+        NumeralTickFormatter,
         )
-from bokeh.charts import HeatMap
+from bokeh.plotting import figure
+from bokeh.layouts import gridplot
 
 import nems.utilities.pruffix as prx
 
 class Performance_Report():
     def __init__(self, data, batch, models):
-        self.data = data
         self.batch = batch
         self.abbr, self.pre, self.suf = prx.find_common(models)
         data.replace(models, self.abbr, inplace=True)
+        self.data = data
         
     def generate_plot(self):
         tools = [
-                PanTool(), ResizeTool(), SaveTool(), WheelZoomTool(),
+                PanTool(), SaveTool(), WheelZoomTool(),
                 ResetTool(), HoverTool()
                 ]
-        p = HeatMap(self.data, x='cellid', y='modelname', values='r_test',
-                    stat=None, title=(
-                            "batch {0}, model prefix: {1}, suffix: {2}"
-                            .format(self.batch, self.pre, self.suf)
-                            ), hover_text='r_test',
-                    tools=tools, responsive=True,
-                    )
-        p.yaxis.major_label_orientation='horizontal'
+        colors = [
+                '#084594', '#2171b5', '#4292c6', '#6baed6', '#9ecae1',
+                '#c6dbef', '#deebf7', '#f7fbff'
+                ]
+        # reversed puts darker colors for higher values
+        colors = [c for c in reversed(colors)]
+        mapper = LinearColorMapper(
+                palette=colors, low=self.data.r_test.min(),
+                high=self.data.r_test.max()
+                )
+        source = ColumnDataSource(self.data)
+        p = figure(
+                title=(
+                "batch {0}, model prefix: {1}, suffix: {2}"
+                .format(self.batch, self.pre, self.suf)
+                ),
+                x_range=list(set(self.data['cellid'].values.tolist())),
+                y_range=list(set(self.data['modelname'].values.tolist())),
+                tools=tools, toolbar_location='above',
+                )
+        
+        p.grid.grid_line_color = None
+        p.axis.axis_line_color = None
+        p.axis.major_tick_line_color = None
+        p.axis.major_label_text_font_size = '10pt'
+        p.axis.major_label_standoff = 0
         p.xaxis.visible = False
         
-        self.script, self.div = components(p)
+        p.rect(
+                x='cellid', y='modelname', width=1, height=1, source=source,
+                fill_color={'field':'r_test', 'transform':mapper},
+                line_color=None,
+                )
+        
+        color_bar = ColorBar(
+                color_mapper=mapper, major_label_text_font_size="10pt",
+                ticker=BasicTicker(desired_num_ticks=len(colors)),
+                formatter=NumeralTickFormatter(format="0.00"),
+                label_standoff=10, border_line_color=None, location=(0,0),
+                )
+
+        p.add_layout(color_bar, 'right')
+        p.select_one(HoverTool).tooltips = [
+                ('r_test: ', '@r_test'),
+                ('model: ', '@modelname'),
+                ('cellid: ', '@cellid'),
+                ]
+        
+        grid = gridplot(p, ncols=1, responsive=True)
+        self.script, self.div = components(grid)
+        
+        # heatmap and other charts deprecated by Bokeh
+        #p = HeatMap(self.data, x='cellid', y='modelname', values='r_test',
+        #            stat=None, title=(
+        #                    "batch {0}, model prefix: {1}, suffix: {2}"
+        #                    .format(self.batch, self.pre, self.suf)
+        #                    ), hover_text='r_test',
+        #            tools=tools, responsive=True,
+        #            )
+        #p.yaxis.major_label_orientation='horizontal'
+        #p.xaxis.visible = False
+        #self.script, self.div = components(p)
     
 class Fit_Report():
     def __init__(self, data):

@@ -715,10 +715,11 @@ $(document).ready(function(){
     
     function verifySubmit(){
         var nameEntered = $("[name='editName']").val();
+        var analysisId = $("[name='editId']").val();
         
         $.ajax({
            url: $SCRIPT_ROOT + '/check_analysis_exists',
-           data: { nameEntered:nameEntered },
+           data: { nameEntered:nameEntered, analysisId:analysisId },
            type: 'GET',
            success: function(data){
                 if (data.exists){
@@ -1407,6 +1408,24 @@ $(document).ready(function(){
 
     $("#toggleStatus").on('click', function(){
         toggleVisibility($("#statusFilters"));
+    });
+
+    $("#reload").click(function(){
+        $.ajax({
+            url: $SCRIPT_ROOT + '/reload_modules',
+            data: {},
+            type: 'GET',
+            success: function(data){
+                console.log("reload call succeeded");
+            },
+            error: function(error){
+                console.log(error);
+            }
+        });
+    });
+
+    $("#sitemap").click(function(){
+        window.open($SCRIPT_ROOT + '/site_map', '_blank');
     });
 
 });
