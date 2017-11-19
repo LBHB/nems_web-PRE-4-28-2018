@@ -1,6 +1,0 @@
-#!/bin/bash
-
-locdump='mysqldump --host=hyrax.ohsu.edu -udavid -pnine1997'
-
-$locdump cell NarfBatches NarfResults NarfAnalysis >/tmp/NarfTables.sql
-
