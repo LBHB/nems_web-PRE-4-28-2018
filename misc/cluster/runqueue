@@ -60,6 +60,33 @@ mysql --host=$DBSERVER --user=$DBUSER --password=$DBPASSWORD --port=$DBPORT --da
 # pop first arg (QUEUEID), use rest of 
 # command line as program to run
 shift
+
+# prelim code for running off of arbitrary hash code:
+#   CODEHASH=$(mysql --host=$DBSERVER --user=$DBUSER --password=$DBPASSWORD --port=$DBPORT --database=cell --execute="select codeHash from tQueue where id=$QUEUEID;")
+#   export CODEHASH
+# if [ ! -z "$CODEHASH" ]; then
+#   #make new temp directory and clone specific version of repository
+#   #**could just use the one created at top, or is that used for other stuff?
+#   TMPDIR = '/nemstemp/$QUEUEID'
+#   mkdir -p $TMPDIR
+#   git clone https://bitbucket.org/lbhb/nems.git into $TMPDIR
+#   git checkout $CODEHASH
+#   #need some check here for if checkout fails. should default to master?
+#   # or maybe just not run the job at all
+#   #install so that program runs using this rep instead of main one
+#   #does this mean we'll need to re-install the main dir afterward?
+#   pip install -e nems [web]
+#   #call shift command again to remove $1 which is currently the path to
+#   #nems_fit_single in the main nems directory
+#   shift
+#   #do echo and exec statements similar to below but insert path to temp dir
+#   echo "PATH: $PATH" >> $QUEUEOUTPATH/$QUEUEIDROUNDED/$QUEUEID.out
+#   echo "MATLABPATH: $MATLABPATH" >> $QUEUEOUTPATH/$QUEUEIDROUNDED/$QUEUEID.out
+#   echo "COMMAND: nice -n19 /$TMPDIR/nems_fit_single.py $*" >> $QUEUEOUTPATH/$QUEUEIDROUNDED/$QUEUEID.out
+#   exec nice -n19 /$TMPDIR/nems_fit_single.py $* >> $QUEUEOUTPATH/$QUEUEIDROUNDED/$QUEUEID.out 2>&1
+# else:
+#   do the stuff below as normal if no hash code 
+
 echo "PATH: $PATH" >> $QUEUEOUTPATH/$QUEUEIDROUNDED/$QUEUEID.out
 echo "MATLABPATH: $MATLABPATH" >> $QUEUEOUTPATH/$QUEUEIDROUNDED/$QUEUEID.out
 echo "COMMAND: nice -n19 $*" >> $QUEUEOUTPATH/$QUEUEIDROUNDED/$QUEUEID.out
@@ -67,3 +94,4 @@ echo "COMMAND: nice -n19 $*" >> $QUEUEOUTPATH/$QUEUEIDROUNDED/$QUEUEID.out
 # exec means pid will be taken over by the queued job itself
 exec nice -n19 $* >> $QUEUEOUTPATH/$QUEUEIDROUNDED/$QUEUEID.out 2>&1
 
+# fi

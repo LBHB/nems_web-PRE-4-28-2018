@@ -26,7 +26,11 @@ from nems.utilities.print import web_print
 import nems.utilities as ut
 import pkgutil as pk
 
+<<<<<<< HEAD:nems_web/modelpane/views.py
 from nems_web.nems_analysis import app
+=======
+from nems.web.nems_analysis import app
+>>>>>>> ef26925e2d355dd3d434af7088be2ae97765b8d5:nems/web/modelpane/views.py
 from nems_config.defaults import DEMO_MODE
 
 # TODO: reduced size from 12,4 to fit better on smaller res screens, but
