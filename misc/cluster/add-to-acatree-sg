@@ -1,0 +1,8 @@
+#!/bin/bash
+INTERFACE=`/sbin/ifconfig -a | sed 's/[ \t].*//;/^\(lo\|\)$/d'`
+IPADDRESS=`/sbin/ifconfig $INTERFACE | grep "inet " | awk -F'[: ]+' '{ print $4 }'`
+echo "aws ec2 authorize-security-group-ingress --group-name 'acatree server' --protocol tcp --port 22 --cidr $IPADDRESS/32";
+aws ec2 authorize-security-group-ingress --group-name 'acatree server' --protocol tcp --port 22 --cidr $IPADDRESS/32
+aws ec2 authorize-security-group-ingress --group-name 'acatree server' --protocol tcp --port 3306 --cidr $IPADDRESS/32
+aws ec2 authorize-security-group-ingress --group-name 'acatree server' --protocol tcp --port 19555 --cidr $IPADDRESS/32
+aws ec2 authorize-security-group-ingress --group-name 'acatree server' --protocol tcp --port 19999 --cidr $IPADDRESS/32

@@ -1,0 +1,3 @@
+#!/bin/sh
+
+pstree -p $1 | tr -cs '[:digit:]' ' '

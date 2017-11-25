@@ -1,0 +1,47 @@
+#!/bin/bash -f
+
+# qsetload
+# created svd 8/31/03
+# script to update load for a given host
+
+updateload() {
+  local NAME=$1
+  local EXT=$2
+  local L1=$3
+  local L5=$4
+  local L15=$5
+
+  DOMAIN=`hostname -d`
+  if [ "$DOMAIN" == "us-west-2.compute.internal" ] ;
+  then
+    NAME=`wget -qO- http://instance-data/latest/meta-data/public-ipv4`
+    DBSERVER="kamzik.org"
+    DBPORT="19555"
+  else
+    DBSERVER="hyrax"
+    DBPORT="3306"
+  fi
+  DBUSER="david"
+  DBPASSWORD="nine1997"
+  echo "DBSERVER=$DBSERVER DBPORT=$DBPORT"
+  echo "Setting load on name=$NAME,domain=$DOMAIN to $L1/$L5/$L15"
+  echo "update tComputer set load1=$L1,load5=$L5+second(now())/6000,load15=$L15,pingcount=0 where name='$NAME';"
+  mysql --host=$DBSERVER --port=$DBPORT --user=$DBUSER --password=$DBPASSWORD --raw --database=cell --execute="update tComputer set load1=$L1,load5=$L5+second(now())/6000,load15=$L15,pingcount=0 where name='$NAME';" 
+  #mysql --host=hyrax --user=david --password=nine1997 --raw --database=cell --execute="update tComputer set load1=$L1,load5=$L5+second(now())/6000,load15=$L15,pingcount=0 where name='$NAME' AND ext='$EXT';" 
+
+  exit 0
+}
+
+#figure out the computer's name and extension
+HOST=`hostname | tr '.' ' '`
+SHHOST=`echo "$HOST ohsu" | awk '{c=split($0, s); for( n=1; n<=2; ++n) printf "%s ", s[n]  }'` 
+
+# get load from the proc directory
+LOADSTR=`cat /proc/loadavg`
+
+# set the load
+updateload $SHHOST $LOADSTR
+
+
+
+

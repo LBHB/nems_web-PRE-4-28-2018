@@ -1,0 +1,45 @@
+#! /bin/bash -l
+
+#if [ $# -eq 0 ]; then
+#        echo "syntax:  matlabbg <command> [<outputfile>]"
+#        exit
+#fi
+
+#echo "MATLABPATH: $MATLABPATH"
+export MATLABPATH
+DISPLAY=""
+export DISPLAY
+
+if [ $# -eq 0 ]; then
+    MATCMD="queuerun"
+else
+    MATCMD=$1
+fi
+
+hostname
+echo "Running matlab in background..."
+echo "  matlab command: $MATCMD"
+
+#if [ $# -eq 1 ]; then
+        echo "  no output file specified, using stdout"
+        matlab << EOF 
+$MATCMD
+EOF
+
+#else
+#        echo "  output file: $2"
+#        
+#        matlab > $2 << EOF 
+#$1
+#EOF
+
+#fi
+
+# clean up temp files if they're from the queue
+echo ""
+echo "$QUEUEID $TMP"
+if [ "" != "$QUEUEID" ]; then
+    if [ "$TMP" == "/tmp/$QUEUEID" ]; then
+        \rm -R $TMP
+    fi
+fi
