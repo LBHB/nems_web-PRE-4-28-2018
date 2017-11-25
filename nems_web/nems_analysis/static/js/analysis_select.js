@@ -992,6 +992,8 @@ $(document).ready(function(){
         var cSelected = $("#cellSelector").val();
         var mSelected = $("#modelSelector").val();
         var codeHash = $("#codeHash").val();
+        var jerbKey = $("#jerbKey").val();
+        var jerbVal = $("#jerbVal").val();
         var forceRerun = 0;
         
         if (document.getElementById('forceRerun').checked){
@@ -1020,7 +1022,8 @@ $(document).ready(function(){
         $.ajax({
             url: $SCRIPT_ROOT + '/enqueue_models',
             data: { bSelected:bSelected, cSelected:cSelected,
-                   mSelected:mSelected, forceRerun, codeHash:codeHash },
+                   mSelected:mSelected, forceRerun, codeHash:codeHash,
+                   jerbKey:jerbKey, jerbVal:jerbVal },
             // TODO: should POST be used in this case?
             type: 'GET',
             success: function(result){
@@ -1428,4 +1431,25 @@ $(document).ready(function(){
         window.open($SCRIPT_ROOT + '/site_map', '_blank');
     });
 
+    $("#codeHash").change(function(){
+        if ($("#codeHash").val() === ''){
+            document.getElementById('jerbKey').disabled = false;
+            document.getElementById('jerbVal').disabled = false;
+        } else {
+            document.getElementById('jerbKey').disabled = true;
+            $("#jerbKey").val('');
+            document.getElementById('jerbVal').disabled = true;
+            $("#jerbVal").val('');
+        }
+    });
+
+    $("#jerbKey, #jerbVal").change(function(){
+        if (($("#jerbKey").val() === '') && ($("#jerbVal").val() === '')){
+            document.getElementById('codeHash').disabled = false;
+        } else {
+            document.getElementById('codeHash').disabled = true;
+            $("#codeHash").val('');
+        }
+    });
+    
 });
