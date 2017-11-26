@@ -232,41 +232,20 @@
                     <div class="input-group-btn">
                         <button type="button"
                                 class="btn btn-default btn-xs"
+                                id="fitOptions"
+                                data-toggle="modal"
+                                data-target="#fitOptionsModal">
+                                    Fit Options
+                        </button>
+                    </div>
+                    <div class="input-group-btn">
+                        <button type="button"
+                                class="btn btn-default btn-xs"
                                 id="fitReport"
                                 tabindex="-1">
                                     Fit Report
                         </button>
                     </div>
-                    <div class="input-group-btn">
-                        <button tabindex="-1"
-                                type="button"
-                                class="btn btn-default btn-xs"
-                                id="toggleFitOp">
-                                    Fit Options
-                        </button>
-                    </div>
-                </div>
-                <div class="input-group form-inline"
-                     id="fitOpDiv">
-                        Force Rerun
-                        <input type="checkbox"
-                               id="forceRerun"
-                               value="1">
-                </div>
-                <div class="input-group form-inline"
-                     id="queueOpDiv">
-                        Code Hash
-                        <input type="text"
-                               id="codeHash"
-                               style="width: 85px;">
-                        Jerb Keys
-                        <input type="text"
-                               id="jerbKey"
-                               style="width: 85px;">
-                        Jerb Values
-                        <input type="text"
-                               id="jerbVal"
-                               style="width: 85px;">
                 </div>
             </div></div><!-- model buttons row and dummy col-->
         </div><!-- cell and model column -->
@@ -873,7 +852,80 @@
             </div><!--content -->
         </div><!--dialog-->
     </div><!--modal-->
-    
+  
+    <div class="modal" id="fitOptionsModal" tabindex="-1" role="dialog">
+        <div class="modal-dialog modal-md" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3 class="modal-title"> Model Fit Options
+                    <button type="button" class="close" data-dismiss="modal"
+                    aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                    </h3>
+                </div><!-- header -->
+                <div class="modal-body">
+                    <form>
+                        <span style="font-weight: bold; margin-bottom: 10px;">
+                            Version Options
+                        </span>
+                        <div class="input-group"
+                             id="queueOpDiv"
+                             style="margin-bottom: 10px;">
+                                Code Hash
+                                <input type="text"
+                                       id="codeHash"
+                                       placeholder="ex: 038c713">
+                        </div>
+                        <div class='input-group' style="margin-bottom: 5px;">
+                                Jerb Query
+                                <input type="text"
+                                       id="jerbQuery"
+                                       placeholder="ex: {'batch':['271','291','294']}">
+                                <button type="button"
+                                        class="btn btn-default btn-xs"
+                                        id="clearQuery">
+                                        <span class="glyphicon glyphicon-remove">
+                                        </span>
+                                </button>
+                                <span style="opacity: 0.5;">
+                                    (Takes precedence over codeHash)
+                                </span>
+                        </div>
+                        <div class="input-group form-inline"
+                             style="width: 100%;">
+                                Jerb Key
+                                <input type="text"
+                                       id="jerbKey"
+                                       placeholder="ex: batch">
+                                Jerb Values
+                                <input type="text"
+                                       id="jerbVal"
+                                       placeholder="ex: 271,291,294">
+                                <button type="button"
+                                        class="btn btn-default btn-xs"
+                                        id="addJerbKV">
+                                    <span class="glyphicon glyphicon-plus">
+                                    </span>
+                                </button>
+                        </div>
+                        <br>
+                        <span style="font-weight: bold; margin-bottom: 5px;">
+                            Misc Options
+                        </span>
+                        <div class="input-group"
+                             id="fitOpDiv">
+                                Force Rerun
+                                <input type="checkbox"
+                                       id="forceRerun"
+                                       value="1">
+                        </div>
+                    </form>
+                </div><!-- body -->
+            </div><!--content -->
+        </div><!--dialog-->
+    </div><!--modal-->    
+
     <div id="loadingPopup">
         <div id="loadingMessage">
         </div>

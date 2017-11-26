@@ -80,10 +80,9 @@ $(document).ready(function(){
         return false;
     });
     */
-                 
+      
+    /*           
     function initTable(table){
-        // turned off DataTable for now since it wasn't being used for much.
-        return false;
         // Called any time results is updated -- set table options here
         table.DataTable({
             paging: false,
@@ -95,6 +94,7 @@ $(document).ready(function(){
             // (can add ctrl/shift click etc)
         });
     }
+    */
 
     var cols_array = []
     function get_default_cols(){
@@ -529,7 +529,6 @@ $(document).ready(function(){
                         .text(data.analysislist[analysis]));
                 });
                 
-                console.log("changing analysis selector value inside updateAnalysis() function");
                 if (data.analysislist.includes(saved_selections.analysis)){
                     $("#analysisSelector").val(saved_selections.analysis);
                 } else {
@@ -992,8 +991,7 @@ $(document).ready(function(){
         var cSelected = $("#cellSelector").val();
         var mSelected = $("#modelSelector").val();
         var codeHash = $("#codeHash").val();
-        var jerbKey = $("#jerbKey").val();
-        var jerbVal = $("#jerbVal").val();
+        var jerbQuery = $("#jerbQuery").val();
         var forceRerun = 0;
         
         if (document.getElementById('forceRerun').checked){
@@ -1023,7 +1021,7 @@ $(document).ready(function(){
             url: $SCRIPT_ROOT + '/enqueue_models',
             data: { bSelected:bSelected, cSelected:cSelected,
                    mSelected:mSelected, forceRerun, codeHash:codeHash,
-                   jerbKey:jerbKey, jerbVal:jerbVal },
+                   jerbQuery },
             // TODO: should POST be used in this case?
             type: 'GET',
             success: function(result){
@@ -1431,25 +1429,67 @@ $(document).ready(function(){
         window.open($SCRIPT_ROOT + '/site_map', '_blank');
     });
 
+
+////////////                 JERB STUFF               ////////////////////
+
+    $("#addJerbKV").click(function(){
+        key = $("#jerbKey").val();
+        val = $("#jerbVal").val();
+        query = $("#jerbQuery").val();
+        $.ajax({
+            url: $SCRIPT_ROOT + '/add_jerb_kv',
+            data: {key:key, val:val, query:query},
+            type: 'GET',
+            success: function(data){
+                $("#jerbQuery").val(JSON.stringify(data.newQuery)).change();
+                $("#jerbKey").val('');
+                $("#jerbVal").val('');
+            },
+            error: function(error){
+                console.log(error);
+            }
+        });
+    });
+
+    // use the following two functions to enforce exclusion between
+    // codeHash and jerbQuery
+    /*
     $("#codeHash").change(function(){
         if ($("#codeHash").val() === ''){
-            document.getElementById('jerbKey').disabled = false;
-            document.getElementById('jerbVal').disabled = false;
+            //document.getElementById('jerbQuery').disabled = false;
+            return false;
         } else {
-            document.getElementById('jerbKey').disabled = true;
+            //document.getElementById('jerbQuery').disabled = true;
+            $("#jerbQuery").val('');
             $("#jerbKey").val('');
-            document.getElementById('jerbVal').disabled = true;
             $("#jerbVal").val('');
         }
     });
 
-    $("#jerbKey, #jerbVal").change(function(){
-        if (($("#jerbKey").val() === '') && ($("#jerbVal").val() === '')){
-            document.getElementById('codeHash').disabled = false;
+    $("#jerbQuery").change(function(){
+        if ($("#jerbQuery").val() === ''){
+            //document.getElementById('codeHash').disabled = false;
+            return false;
         } else {
-            document.getElementById('codeHash').disabled = true;
+            //document.getElementById('codeHash').disabled = true;
             $("#codeHash").val('');
         }
     });
-    
+    */
+
+    $("#jerbKey").change(function(){
+        if ($("#jerbKey").val() === ''){
+            return false;
+        } else {
+            console.log('inside jerbkey function');
+            queryString = $("#jerbQuery").val();
+            query = JSON.parse(queryString);
+            key = $("#jerbKey").val();
+            $("#jerbVal").val(query[key]);
+        }
+    });
+
+    $("#clearQuery").click(function(){
+        $("#jerbQuery").val('');
+    });
 });

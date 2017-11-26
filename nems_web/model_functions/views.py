@@ -16,6 +16,8 @@ See Also:
 
 """
 
+import ast
+
 from flask import jsonify, request
 from flask_login import login_required
 
@@ -89,25 +91,44 @@ def enqueue_models_view():
     cSelected = request.args.getlist('cSelected[]')
     mSelected = request.args.getlist('mSelected[]')
     codeHash = request.args.get('codeHash')
-    jerbKey = request.args.get('jerbKey')
-    jerbVal = request.args.get('jerbVal')
+    jerbQuery = request.args.get('jerbQuery')
     
     if not codeHash:
         codeHash = 'master'
+        
+    if not jerbQuery:
+        jerbQuery = ''
+        
     force_rerun = request.args.get('forceRerun', type=int)
     
-    # TODO: need helper function to parse entries into formatted json
-    #       --Comma-separted keys, comma-separated lists of values?
-    #       i.e. jerbKey: a, b, c
-    #            jerbVal: [a1, a2, a3], [b1, b2, b3], [c1, c2, c3]
-    #       would translate to {a:[a1, a2, a3], b:[b1, b2, b3], c:[c1, c2, c3]}
-    jerbQuery = {jerbKey:jerbVal}
-    
-    # TODO: add jerbQuery to tQueue table
     enqueue_models(
             cSelected, bSelected, mSelected,
             force_rerun=bool(force_rerun), user=user.username,
-            codeHash=codeHash, 
+            codeHash=codeHash, jerbQuery=jerbQuery,
             )
     return jsonify(data=True)
+    
+@app.route('/add_jerb_kv')
+def add_jerb_kv():
+    """Take key, list of values and existing JSON object (query) from input
+    and combine them into a new JSON object with the key and values added."""
+    
+    key = request.args.get('key')
+    values = request.args.get('val')
+    query = request.args.get('query')
+        
+    if not query:
+        query = {}
+    else:
+        query = ast.literal_eval(query)
+    
+    if not values:
+        val_list = []
+    else:
+        values = values.replace(' ','')
+        val_list = values.split(',')
+        
+    query[key] = val_list
+    return jsonify(newQuery=query)
+    
     
