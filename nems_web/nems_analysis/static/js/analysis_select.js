@@ -454,7 +454,7 @@ $(document).ready(function(){
                 results.html(data.resultstable)
                 //sizeDragTable();
                 var table = results.children("table");
-                initTable(table);
+                //initTable(table);
                 //disabled for now - need to figure out agood way to let user
                 // toggle the links on and off
                 addLinksToTable();

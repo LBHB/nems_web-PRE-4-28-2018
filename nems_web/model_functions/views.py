@@ -93,6 +93,8 @@ def enqueue_models_view():
     codeHash = request.args.get('codeHash')
     jerbQuery = request.args.get('jerbQuery')
     
+    print('codeHash retrieved properly?: {0}'.format(codeHash))
+    
     if not codeHash:
         codeHash = 'master'
         
@@ -110,8 +112,8 @@ def enqueue_models_view():
     
 @app.route('/add_jerb_kv')
 def add_jerb_kv():
-    """Take key, list of values and existing JSON object (query) from input
-    and combine them into a new JSON object with the key and values added."""
+    """Take key, list of values, and existing JSON object (query) from input
+    then combine them into a new JSON object with the key and values added."""
     
     key = request.args.get('key')
     values = request.args.get('val')
@@ -120,6 +122,7 @@ def add_jerb_kv():
     if not query:
         query = {}
     else:
+        # Evaluate JSON-formatted string as a dict
         query = ast.literal_eval(query)
     
     if not values:
