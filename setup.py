@@ -13,7 +13,7 @@ GENERAL_REQUIRES = [
         'numpy', 'scipy', 'matplotlib', 'flask', 'sqlalchemy', 'mpld3',
         'boto3', 'tensorflow', 'bokeh', 'flask-socketio', 'eventlet', 'bcrypt',
         'flask-WTF', 'flask-login', 'flask-bcrypt', 'seaborn', 'flask-assets',
-        'pymysql',
+        'pymysql', 'gevent',
         ]
 
 # Additional dependency: NEMS (https://bitbucket.org/lbhb/nems)

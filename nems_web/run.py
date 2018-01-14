@@ -13,10 +13,11 @@ the server, potentially causing harm.
 """
 
 from nems_web.nems_analysis import app #socketio
-#import nems_config.NEMS_Path as np
+from gevent.wsgi import WSGIServer
 
 #from OpenSSL import SSL
 #context = SSL.Context(SSL.PROTOCOL_TLSv1_2)
+# TODO: fix path spec when add in SSL
 #context.use_privatekey_file(np.path + '/nems_config/host.key')
 #context.use_certificate_file(np.path + '/nems_config/host.cert')
 
@@ -26,7 +27,9 @@ from nems_web.nems_analysis import app #socketio
 #        np.path + '/nems_config/host.cert', np.path + '/nems_config/host.key'
 #        )
 
-app.run(
-        host="0.0.0.0", port=8000, debug=True,
-        use_reloader=False, #ssl_context=context
-        )
+# TODO: app.run() not meant to be used in production, just for testing
+#       according to Flask docs. Need to replace with better server.
+#       flask.pocoo.org/docs/0.12/deploying/wsgi-standalone/
+#app.run(host="0.0.0.0", port=8000, debug=True, use_reloader=False)
+http_server = WSGIServer(('', 8000), app)
+http_server.serve_forever()

@@ -1,7 +1,7 @@
 import logging
 log = logging.getLogger(__name__)
 werk = logging.getLogger('werkzeug')
-werk.setLevel(logging.DEBUG)
+werk.setLevel(logging.ERROR)
 
 from flask import Flask
 from flask_assets import Environment, Bundle
