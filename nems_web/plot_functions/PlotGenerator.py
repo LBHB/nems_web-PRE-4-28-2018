@@ -11,6 +11,10 @@ representations of the bokeh plot for the data, which can then be embedded in
 an html document.
 
 """
+
+import logging
+log = logging.getLogger(__name__)
+
 import io
 import math
 import statistics
@@ -72,7 +76,7 @@ TOOL_STICK = True
 
 class PlotGenerator():
     """Base class for plot generators."""
-    
+
     def __init__(
             self, data, measure, models, fair=True, outliers=False,
             extra_cols=[],
@@ -89,22 +93,22 @@ class PlotGenerator():
         data.replace(models, self.abbr, inplace=True)
         self.models = self.abbr
         self.data = self.form_data_array(data)
-        
+
         # Use this inside views function to check whether generate_plot
         # should be invoked.
         if (self.data.size == 0):
             self.emptycheck = True
         else:
             self.emptycheck = False
-        print("Building plot...")
-            
+        log.info("Building plot...")
+
 
     def generate_plot(self):
         """Assigns script and div attributes to the plot generator object.
-        
+
         All plot classes should implement some form of this function to ensure
         that script and div are returned to the relevant view function.
-        
+
         Assigns:
         --------
         self.script : JSON data (or a string default/error)
@@ -112,27 +116,27 @@ class PlotGenerator():
         self.div : JSON data (or a string default/error)
             Bokeh javascript used to render a plot from the attached
             datasource.
-        
+
         """
-        
+
         self.script, self.div = ('Plot type is','not yet implemented')
-    
+
     def create_hover(self):
-        """Returns a Bokeh HoverTool() object, possibly with generated 
+        """Returns a Bokeh HoverTool() object, possibly with generated
         toolip HTML.
-        
+
         $ and @ tell the HoverTool() where to pull data values from.
         $ denotes a special column (ex: $index or $x),
             refer to Bokeh docs for a full list.
         @ denotes a field in the data source (ex: @cellid)
-        
+
         """
-        
+
         return HoverTool()
-    
+
     def form_data_array(self, data):
         """Formats data into a multi-indexed DataFrame for plotting.
-        
+
         Takes a DataFrame (built from a full NarfResults query) and converts it
         to a new multi-indexed DataFrame (cellid level 0, modelname level 1)
         with a column for each performance measure, plus any other columns
@@ -141,24 +145,24 @@ class PlotGenerator():
             meet outlier criteria will be removed.
         If 'fair' is checked, cellid rows containing a NaN value in any
             column will be removed.
-            
+
         Returns:
         --------
         newData : Pandas DataFrame w/ multi-index
             Multi-indexed DataFrame containing a series of values for each
             cellid + modelname combination.
-        
+
         See Also:
         ---------
         Narf_Analysis : compute_data_matrix
-        
+
         """
-        
+
         # TODO: figure out a good way to form this from the existing
         #       dataframe instead of making a new one then copying over.
         #       Should be able to just re-index then apply some
         #       lambda function over vectorized dataframe for filtering?
-        
+
         celllist = [
                 cell for cell in
                 list(set(data['cellid'].values.tolist()))
@@ -171,13 +175,13 @@ class PlotGenerator():
         newData = pd.DataFrame(
                 index = multiIndex, columns = self.measure,
                 )
-        
+
         newData.sort_index()
 
         for c in celllist:
             for m in modellist:
                 dataRow = data.loc[(data.cellid == c) & (data.modelname == m)]
-                
+
                 # Add column values for any additional columns specificed
                 # in plot class (ex: n_parms for pareto plot)
                 #if self.extra_cols:
@@ -186,19 +190,19 @@ class PlotGenerator():
                 #            colval = dataRow[col].values.tolist()[0]
                 #        except Exception as e:
                 #            # TODO: Is this a good way to do this?
-                #            #       This requires that all extra columns also 
+                #            #       This requires that all extra columns also
                 #            #       have values for every cell/model
                 #            #       if fair is checked.
                 #            colval = math.nan
-                #            print(e)
+                #            log.info(e)
                 #        finally:
                 #            newData[col].loc[c,m] = colval
-                
+
                 for meas in self.measure:
-                    value = np.nan 
+                    value = np.nan
                     newData[meas].loc[c,m] = value
                     # If loop hits a continue, value will be left as NaN.
-                    # Otherwise, will be assigned a value from data 
+                    # Otherwise, will be assigned a value from data
                     # after passing all checks.
                     try:
                         value = dataRow[meas].values.tolist()[0]
@@ -206,16 +210,16 @@ class PlotGenerator():
                         # Error should mean no value was recorded,
                         # so leave as NaN.
                         # No need to run outlier checks if value is missing.
-                        print("No %s recorded for %s,%s"%(meas,c,m))
+                        log.info("No %s recorded for %s,%s"%(meas,c,m))
                         continue
-                    
+
                     if not self.outliers:
                         # If outliers is false, run a bunch of checks based on
                         # measure and if a check fails, step out of the loop.
-                        
+
                         # Comments for each check are copied from
                         # from Narf_Analysis : compute_data_matrix
-                        
+
                         # "Drop r_test values below threshold"
                         a1 = (meas == 'r_test')
                         b1 = (value < dataRow['r_floor'].values.tolist()[0])
@@ -228,7 +232,7 @@ class PlotGenerator():
                         b3 = b1
                         if (a1 and b1) or (a2 and b2) or (a3 and b3):
                             continue
-                    
+
                         # "Drop MI values greater than 1"
                         a1 = (meas == 'mi_test')
                         b1 = (value > 1)
@@ -236,7 +240,7 @@ class PlotGenerator():
                         b2 = (0 <= value <= 1)
                         if (a1 and b1) or (a2 and not b2):
                             continue
-                           
+
                         # "Drop MSE values greater than 1.1"
                         a1 = (meas == 'mse_test')
                         b1 = (value > 1.1)
@@ -244,7 +248,7 @@ class PlotGenerator():
                         b2 = b1
                         if (a1 and b1) or (a2 and b2):
                             continue
-                           
+
                         # "Drop NLOGL outside normalized region"
                         a1 = (meas == 'nlogl_test')
                         b1 = (-1 <= value <= 0)
@@ -252,7 +256,7 @@ class PlotGenerator():
                         b2 = b1
                         if (a1 and b1) or (a2 and b2):
                             continue
-                           
+
                         # TODO: is this still used? not listed in NarfResults
                         # "Drop gamma values that are too low"
                         a1 = (meas == 'gamma_test')
@@ -264,7 +268,7 @@ class PlotGenerator():
 
                         # TODO: is an outlier check needed for cohere_test
                         #       and/or cohere_fit?
-                        
+
                     # If value existed and passed outlier checks,
                     # re-assign it to the proper DataFrame position
                     # to overwrite the NaN value.
@@ -278,7 +282,7 @@ class PlotGenerator():
                     if newData.loc[c,m].isnull().values.any():
                         newData.drop(c, level='cellid', inplace=True)
                         break
-        
+
 
         # Swap the 0th and 1st levels so that modelname is the primary index,
         # since most plots group by model.
@@ -286,17 +290,17 @@ class PlotGenerator():
 
         # Leave these in for testing to make sure dropping NaN values
         # is working correctly
-        #print("was fair checked?")
-        #print(self.fair)
-        #print("does the data look different or contain nans?")
-        #print(newData[self.measure[0]].values)
+        #log.info("was fair checked?")
+        #log.info(self.fair)
+        #log.info("does the data look different or contain nans?")
+        #log.info(newData[self.measure[0]].values)
 
         return newData
-    
-        
+
+
 class Scatter_Plot(PlotGenerator):
     """Defines the class used to generate a model-comparison scatter plot."""
-    
+
     def __init__(self, data, measure, models, fair=True, outliers=False):
         PlotGenerator.__init__(self, data, measure, models, fair, outliers)
     def create_hover(self):
@@ -311,19 +315,19 @@ class Scatter_Plot(PlotGenerator):
                 <span class="hover-tooltip">cell: @cellid</span>
             </div>
             """%(self.measure[0],self.measure[0])
-            
+
         return HoverTool(tooltips=hover_html)
-            
+
     def generate_plot(self):
         """Iteratively reformats and plots self.data for each cell+model combo.
-        
+
         TODO: Finish this doc
-        
+
         """
-        
+
         plots = []
         modelnames = self.data.index.levels[0].tolist()
-        
+
         # Iterate over a list of tuples representing all unique pairs of models.
         for pair in list(itertools.combinations(modelnames,2)):
             tools = [
@@ -333,10 +337,10 @@ class Scatter_Plot(PlotGenerator):
 
             modelX = pair[0]
             modelY = pair[1]
-            
+
             dataX = self.data.loc[modelX]
             dataY = self.data.loc[modelY]
-            
+
             # Only necessary b/c bokeh's $index identifier for HoverTool()
             # is pulling an integer index despite data being indexed by cellid.
             # If cellid strings can be pulled from index instead,
@@ -358,7 +362,7 @@ class Scatter_Plot(PlotGenerator):
                     cells = cellsX
                 else:
                     cells = cellsY
-            
+
             x_mean = np.mean(dataX[self.measure[0]])
             x_median = np.median(dataX[self.measure[0]])
             y_mean = np.mean(dataY[self.measure[0]])
@@ -372,14 +376,14 @@ class Scatter_Plot(PlotGenerator):
                     "{0}, mean: {1:5.4f}, median: {2:5.4f}"
                     .format(modelY, y_mean, y_median)
                     )
-            
+
             data = pd.DataFrame({
                     'x_values':dataX[self.measure[0]],
                     'y_values':dataY[self.measure[0]],
                     'cellid':cells,
                     })
             dat_source = ColumnDataSource(data)
-                
+
             p = figure(
                     x_range=[0,1], y_range=[0,1],
                     x_axis_label=x_label, y_axis_label=y_label,
@@ -396,7 +400,7 @@ class Scatter_Plot(PlotGenerator):
             p.add_glyph(dat_source, glyph)
             p.line([0,1], [0,1], line_width=1, color='black')
             plots.append(p)
-    
+
         # If more than one plot was made (i.e. 2 or more models were selected),
         # put them in a grid.
 
@@ -404,7 +408,7 @@ class Scatter_Plot(PlotGenerator):
         #    singleplot = plots[0]
         #    self.script,self.div = components(singleplot)
         #    return
-        #elif len(plots) > 1:            
+        #elif len(plots) > 1:
         grid = gridplot(
                 plots, ncols=GRID_COLS, responsive=True,
                 )
@@ -419,12 +423,12 @@ class Scatter_Plot(PlotGenerator):
 class Bar_Plot(PlotGenerator):
     """Defines the class used to generate a mean-performance bar plot for
     a model-by-model comparison.
-    
+
     """
-    
+
     def __init__(self, data, measure, models, fair=True, outliers=False):
         PlotGenerator.__init__(self, data, measure, models, fair, outliers)
-            
+
     def create_hover(self):
         hover_html = """
             <div>
@@ -443,15 +447,15 @@ class Bar_Plot(PlotGenerator):
                 <span class="hover-tooltip">stdev: @stdev</span>
             </div>
             """
-            
+
         return HoverTool(tooltips=hover_html)
-            
-    def generate_plot(self):           
+
+    def generate_plot(self):
         """Calculates mean and standard deviation for measure(s) by model,
         then generates a bar plot of model vs mean performance.
-        
+
         TODO: Finish this doc.
-        
+
         """
 
         # Use this for a built-in bar plot instead,
@@ -461,12 +465,12 @@ class Bar_Plot(PlotGenerator):
         #        tools=tools, color='modelname')
         #self.script,self.div = components(p)
         #return
-        
+
         # TODO: hardcoded self.measure[0] for now, but should incorporate
         #       a for loop somewhere to subplot for each selected measure
-        
+
         # TODO: add significance information (see plot_bar_pretty
-        #       and randttest in narf_analysis)      
+        #       and randttest in narf_analysis)
 
         # build new pandas series of stdev values to be added to dataframe
         # if want to show more info on tooltip in the future, just need
@@ -493,7 +497,7 @@ class Bar_Plot(PlotGenerator):
             mean_col.at[model] = mean
             median_col.at[model] = median
             n_cells_col.at[model] = values.count()
-            
+
         newData = pd.DataFrame.from_dict({
                 'stdev':stdev_col, 'mean':mean_col, 'median':median_col,
                 'n_cells':n_cells_col,
@@ -508,7 +512,7 @@ class Bar_Plot(PlotGenerator):
                     )
             return
         dat_source = ColumnDataSource(newData)
-        
+
         tools = [
                 PanTool(), SaveTool(), WheelZoomTool(),
                 ResetTool(), self.create_hover()
@@ -541,14 +545,14 @@ class Bar_Plot(PlotGenerator):
             [p], ncols=GRID_COLS, responsive=True,
             )
         self.script, self.div = components(grid)
-            
-            
+
+
 class Pareto_Plot(PlotGenerator):
     """Defines the class used to generate a Bokeh box-plot for mean performance
     versus model complexity.
-    
+
     """
-    
+
     # Always include 'n_parms' as an extra column, since it's required
     # for this plot type.
     def __init__(
@@ -558,7 +562,7 @@ class Pareto_Plot(PlotGenerator):
         PlotGenerator.__init__(
                 self, data, measure, models, fair, outliers, extra_cols,
                 )
-            
+
     def create_hover(self):
         hover_html = """
         <div>
@@ -574,17 +578,17 @@ class Pareto_Plot(PlotGenerator):
             <span class="hover-tooltip">std err: @stderr</span>
         </div>
         """.format(self.measure[0])
-        
+
         return HoverTool(tooltips=hover_html)
-            
+
     def generate_plot(self):
         """TODO: write this doc."""
-        
+
         tools = [
                 PanTool(), SaveTool(), WheelZoomTool(),
                 ResetTool(),
                 ]
-        
+
         x_values = []
         y_values = []
         std_errors = []
@@ -597,7 +601,7 @@ class Pareto_Plot(PlotGenerator):
             x_values.append(n_parms)
             y_values.append(mean)
             std_errors.append(stderr)
-            
+
         newData = pd.DataFrame.from_dict({
                 'stderr':std_errors, 'mean':y_values, 'n_parms':x_values,
                 'modelname':models,
@@ -612,7 +616,7 @@ class Pareto_Plot(PlotGenerator):
                     )
             return
         dat_source = ColumnDataSource(newData)
-        
+
         p = figure(
                 tools=tools,
                 x_axis_label=("N Parms, model prefix: {0}, "
@@ -622,7 +626,7 @@ class Pareto_Plot(PlotGenerator):
                 title="Mean {0} per Model vs Complexity".format(self.measure[0]),
                 output_backend="svg", sizing_mode='scale_width',
                 )
-                
+
         circles = Circle(
                 x='n_parms', y='mean', size=6, fill_color="navy",
                 fill_alpha=0.7,
@@ -647,7 +651,7 @@ class Pareto_Plot(PlotGenerator):
             [p], ncols=GRID_COLS, sizing_mode='scale_width'
             )
         self.script, self.div = components(grid)
-        
+
         #bokeh.charts deprecated by Bokeh
         #p = BoxPlot(
         #        self.data, values=self.measure[0], label='n_parms',
@@ -656,7 +660,7 @@ class Pareto_Plot(PlotGenerator):
         #        toolbar_location=TOOL_LOC, toolbar_sticky=TOOL_STICK,
         #        )
 
-            
+
 class Tabular_Plot(PlotGenerator):
     # TODO: implement this from NARF
     def __init__(
@@ -673,18 +677,18 @@ class Tabular_Plot(PlotGenerator):
                 self, data=data, measure=_measure, models=models, fair=fair,
                 outliers=outliers, extra_cols=_extra_cols,
                 )
-        
+
     def generate_plot(self):
         # After __init__ self.measure should contain everything that
         # was passed in extra_cols
-        
+
         if self.fair:
             self.script, self.div = (
                     "Uncheck 'only fair' ",
                     "to use this plot"
                     )
             return
-        
+
         columns = []
         for m in self.measure:
             if m == 'n_parms':
@@ -707,7 +711,7 @@ class Tabular_Plot(PlotGenerator):
                     columns=columns
                     )
         self.data.replace(0, np.nan, inplace=True)
-        
+
         for i, model in enumerate(table.index.tolist()):
             for j, meas in enumerate(self.measure):
                 series = self.data[meas]
@@ -726,9 +730,9 @@ class Tabular_Plot(PlotGenerator):
                         md = '%s(md)'%m
                     table.at[model, mn] = np.nanmean(series.loc[model])
                     table.at[model, md] = np.nanmedian(series.loc[model])
-                    
+
                     # num valid cells is the minimum of either the current
-                    # value or the number of cells in the series minus number 
+                    # value or the number of cells in the series minus number
                     # of NaN values in series.
                     #table.at['valid_cells', mn] = min(
                     #        table.at['valid_cells', mn],
@@ -738,9 +742,9 @@ class Tabular_Plot(PlotGenerator):
                     #        table.at['valid_cells', md],
                     #        (series.size - table[md].isnull().sum())
                     #        )
-                    
+
         table.sort_values('n_parms', axis=0, ascending=False, inplace=True)
-        
+
         # see pandas style attribute for more options
         positives = [
                 'r(mean)', 'r(median)', 'mi(mn)', 'mi(md)',
@@ -762,7 +766,7 @@ class Tabular_Plot(PlotGenerator):
         #self.html = table.to_html(
         #    index=True, classes="table-hover table-condensed",
         #    )
-        
+
         #source = ColumnDataSource(table)
         #cols = table.columns.tolist()
         #columns = []
@@ -777,14 +781,14 @@ class Tabular_Plot(PlotGenerator):
         #        source=source, columns=columns, editable=False,
         #        reorderable=True, sortable=True,
         #        )
-        
+
         #self.script, self.div = components(data_table)
 
 
 class Significance_Plot(PlotGenerator):
     def __init__(self, data, measure, models, fair=True, outliers=False):
         PlotGenerator.__init__(self, data, measure, models, fair, outliers)
-        
+
     def extents(self, f):
         # reference:
         # https://bl.ocks.org/fasiha/eff0763ca25777ec849ffead370dc907
@@ -794,12 +798,12 @@ class Significance_Plot(PlotGenerator):
         else:
             delta = f[1] - f[0]
         return [f[0] - delta/2, f[-1] + delta/2]
-    
+
     def wilcoxon(self, first, second):
         # make a list of pairs of items from each list
         # TODO: should lists be randomized first? as-is would compare models
         #       on matching cells
-        
+
         # make list of absolute differences between pairs
         abs_diff = [abs(f-second[i]) for i, f in enumerate(first)]
         # and list of signs
@@ -816,16 +820,16 @@ class Significance_Plot(PlotGenerator):
         # return p-value that corresponds to z-score (two-tailed)
         p = 2*(1 - st.norm.cdf(z))
         return p
-        
-            
+
+
     def generate_plot(self):
         modelnames = self.data.index.levels[0].tolist()
-        
+
         array = np.ndarray(
                 shape=(len(modelnames), len(modelnames)),
                 dtype=float,
                 )
-        
+
         for i, m_one in enumerate(modelnames):
             for j, m_two in enumerate(modelnames):
                 # get series of values corresponding to selected measure
@@ -852,7 +856,7 @@ class Significance_Plot(PlotGenerator):
                     #array[i][j] = self.wilcoxon(first, second)
                     # use scipy version
                     array[i][j] = st.wilcoxon(first, second)[1]
-        
+
         xticks = range(len(modelnames))
         yticks = xticks
         minor_xticks = np.arange(-0.5, len(modelnames), 1)
@@ -862,13 +866,13 @@ class Significance_Plot(PlotGenerator):
 
         #extent = self.extents(xticks) + self.extents(yticks)
         #img = plt.imshow(
-        #        array, aspect='auto', origin='lower', 
+        #        array, aspect='auto', origin='lower',
         #        cmap=plt.get_cmap('RdBu'), interpolation='none',
         #        extent=extent,
         #        )
-        
+
         ax = plt.gca()
-        
+
         # ripped from stackoverflow. adds text labels to the grid
         # at positions i,j (model x model)  with text z (value of array at i, j)
         for (i, j), z in np.ndenumerate(array):
@@ -898,7 +902,7 @@ class Significance_Plot(PlotGenerator):
             ax.text(
                     j, i, formatting.format(z), ha='center', va='center',
                     )
-        
+
         ax.set_ylabel('')
         ax.set_xlabel('')
         ax.set_yticks(yticks)
@@ -929,7 +933,7 @@ class Significance_Plot(PlotGenerator):
         nonsig_patch = mpatch.Patch(
                 color='#ABABAB', label='Not Significant', edgecolor='black',
                 )
-        
+
         plt.legend(
                 #bbox_to_anchor=(0., 1.02, 1., .102), ncol=2,
                 bbox_to_anchor=(1.05, 1), ncol=1,
@@ -945,11 +949,11 @@ class Significance_Plot(PlotGenerator):
         plt.close(p)
         img.seek(0)
         self.img_str = img.read()
-            
-            
-            
 
-            
-            
-            
-        
+
+
+
+
+
+
+

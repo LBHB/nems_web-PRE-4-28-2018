@@ -10,6 +10,10 @@ components to pass back to the JS ajax function, which will insert them into
 the display area in the browser.
 
 """
+
+import logging
+log = logging.getLogger(__name__)
+
 from base64 import b64encode
 
 import pandas.io.sql as psql
@@ -20,12 +24,12 @@ from nems_web.nems_analysis import app
 from nems.db import Session, NarfResults, NarfBatches
 import nems_web.plot_functions.PlotGenerator as pg
 
-        
+
 @app.route('/generate_plot_html')
 def generate_plot_html():
 
     session = Session()
-    
+
     plotType = request.args.get('plotType')
     bSelected = request.args.get('bSelected')[:3]
     mSelected = request.args.getlist('mSelected[]')
@@ -41,7 +45,7 @@ def generate_plot_html():
         includeOutliers = True
     else:
         includeOutliers = False
-    
+
     # TODO: Re-do this to include any new criteria dynamically instead of
     #       hard-coding snr/iso/snri.
     filterCriteria = {
@@ -49,13 +53,13 @@ def generate_plot_html():
             'iso' : float(request.args.get('iso')),
             'snri' : float(request.args.get('snri')),
             }
-    
+
     # TODO: Looks like this is what NARF does, but not 100% sure.
     # Always exclude negative values
     for key in filterCriteria:
         if filterCriteria[key] < 0:
             filterCriteria[key] = 0
-            
+
     removalCount = 0
     for cellid in cSelected:
         dbCriteria = (
@@ -66,7 +70,7 @@ def generate_plot_html():
                 )
         if dbCriteria:
             if len(dbCriteria) > 1:
-                print(
+                log.info(
                     "Multiple results found for cellid: %s in batch: %s"
                     %(cellid, bSelected)
                     )#!/usr/bin/env python3
@@ -74,11 +78,11 @@ def generate_plot_html():
             min_snr = min(dbCriteria[0].est_snr, dbCriteria[0].val_snr)
             min_isolation = dbCriteria[0].min_isolation
             min_snr_index = dbCriteria[0].min_snr_index
-            
+
             a = (filterCriteria['snr'] > min_snr)
             b = (filterCriteria['iso'] > min_isolation)
             c = (filterCriteria['snri'] > min_snr_index)
-            
+
             if a or b or c:
                 filterReason = ""
                 if a:
@@ -96,7 +100,7 @@ def generate_plot_html():
                             "min snr index: %s -- was less than criteria: %s\n"
                             %(min_snr_index, filterCriteria['snri'])
                             )
-                #print(
+                #log.info(
                 #    "Removing cellid: %s,\n"
                 #    "because: %s"
                 #    %(cellid, filterReason)
@@ -104,14 +108,14 @@ def generate_plot_html():
                 cSelected.remove(cellid)
                 removalCount += 1
         else:
-            print(
+            log.info(
                 "No entry in NarfBatches for cellid: %s in batch: %s"
                 %(cellid, bSelected)
                 )
             cSelected.remove(cellid)
             removalCount += 1
-    print("Number of cells filtered due to snr/iso criteria: %d"%removalCount)
-        
+    log.info("Number of cells filtered due to snr/iso criteria: %d"%removalCount)
+
     results = psql.read_sql_query(
             session.query(NarfResults)
             .filter(NarfResults.batch == bSelected)
@@ -120,7 +124,7 @@ def generate_plot_html():
             .statement,
             session.bind
             )
-    
+
     # get back list of models that matched other query criteria
     results_models = [
             m for m in
@@ -134,17 +138,17 @@ def generate_plot_html():
             ]
     Plot_Class = getattr(pg, plotType)
     plot = Plot_Class(
-            data=results, measure=measure, models=ordered_models, 
+            data=results, measure=measure, models=ordered_models,
             fair=onlyFair, outliers=includeOutliers,
             )
     if plot.emptycheck:
-        print('Plot checked empty after forming data array')
+        log.info('Plot checked empty after forming data array')
         return jsonify(script='Empty',div='Plot')
     else:
         plot.generate_plot()
-        
+
     session.close()
-    
+
     if hasattr(plot, 'script') and hasattr(plot, 'div'):
         return jsonify(script=plot.script, div=plot.div)
     elif hasattr(plot, 'html'):
@@ -154,8 +158,8 @@ def generate_plot_html():
         return jsonify(image=image)
     else:
         return jsonify(script="Couldn't find anything ", div="to return")
-    
-    
+
+
 @app.route('/plot_window')
 def plot_window():
     return render_template('/plot/plot.html')
@@ -165,7 +169,7 @@ def plot_window():
 ### DEPRECATED ###
 def load_plot_args(request, session):
     """Combines user selections and database entries into a dict of arguments.
-    
+
     Queries database based on user selections for batch, cell and modelname and
     packages the results into a Pandas DataFrame. The DataFrame, along with
     the performance measure, fair and outliers options from the nems_analysis
@@ -174,28 +178,28 @@ def load_plot_args(request, session):
     Since all Plot_Generator objects use the same required arguments, this
     eliminates the need to repeat the selection and querying code for every
     view function.
-    
+
     Arguments:
     ----------
     request : flask request context
         Current request context generated by flask. See flask documentation.
     session : sqlalchemy database session
         An open transaction with the database. See sqlalchemy documentation.
-        
+
     Returns:
     --------
     {} : dict-like
         A dictionary specifying the arguments that should be passed to a
         Plot_Generator object.
-    
+
     Note:
     -----
     This adds no additional functionality, it is only used to simplify
     the code for the above view functions. If desired, it can be copy-pasted
     back into the body of each view function instead, with few changes.
-    
+
     """
-    
+
     bSelected = request.form.get('batch')[:3]
     mSelected = request.form.getlist('modelnames[]')
     cSelected = request.form.getlist('celllist[]')
@@ -210,23 +214,23 @@ def load_plot_args(request, session):
         includeOutliers = True
     else:
         includeOutliers = False
-    
+
     #useSNRorIso = (request.form.get('plotOption[]'),request.form.get('plotOpVal'))
-    
+
     # TODO: filter results based on useSNRorIso before passing data to plot generator
     # note: doing this here instead of in plot generator since it requires db access
     #       make a list of cellids that fail snr/iso criteria
     #       then remove all rows of results where cellid is in that list
-    
+
     results = psql.read_sql_query(session.query(NarfResults).filter\
               (NarfResults.batch == bSelected).filter\
               (NarfResults.cellid.in_(cSelected)).filter\
               (NarfResults.modelname.in_(mSelected)).statement,session.bind)
-    
+
     return {
         'data':results,'measure':measure,'fair':onlyFair,
         'outliers':includeOutliers,
         }
-    
-    
-    
+
+
+

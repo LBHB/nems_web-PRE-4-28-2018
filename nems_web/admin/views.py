@@ -1,3 +1,6 @@
+import logging
+log = logging.getLogger(__name__)
+
 import pkgutil
 import importlib
 import inspect
@@ -25,14 +28,14 @@ def site_map():
     user = get_current_user()
     if user.sec_lvl < 9:
         return Response("Must have admin privileges to view site map")
-    
+
     # get list of defined url routes and their matching function endpoints
     links = []
     for rule in app.url_map.iter_rules():
         if "GET" in rule.methods and has_no_empty_params(rule):
             url = url_for(rule.endpoint, **(rule.defaults or {}))
             links.append([url, rule.endpoint])
-    
+
     # search through web directory and match function endpoint strings to the
     # modules that define those functions
     package = nems_web
@@ -43,17 +46,17 @@ def site_map():
             for importer, modname, ispkg in pkgutil.iter_modules(subpkg.__path__):
                 if "views" not in modname:
                     continue
-                
+
                 mod = importlib.import_module("nems_web.{0}.views".format(sub_name))
                 for link in links:
                     function_names = [
-                            f[0] for f in 
+                            f[0] for f in
                             inspect.getmembers(mod, inspect.isfunction)
                             ]
-                    print("testing...")
-                    print("is: {0}  in  {1}  ?".format(link[1], function_names))
+                    log.info("testing...")
+                    log.info("is: {0}  in  {1}  ?".format(link[1], function_names))
                     if link[1] in function_names:
-                        print("got past second if statement")
+                        log.info("got past second if statement")
                         # if matching function is found in module, replace
                         # endpoint string with module path
                         path = mod.__file__
@@ -61,16 +64,16 @@ def site_map():
                         nems_idx = path.find('nems/nems_web')
                         path = path[nems_idx:]
                         link[1] = path
-    
-    print("Defined routes:\n")
+
+    log.info("Defined routes:\n")
     html = "<h3> Defined routes: </h3>"
     for link in links:
-        print("url route for: {0} \n goes to endpoint: {1}".format(link[0], link[1]))
+        log.info("url route for: {0} \n goes to endpoint: {1}".format(link[0], link[1]))
         html += (
                 "<br><p> url:    {0} </p><p> is defined in:   {1}</p>"
                 .format(link[0], link[1])
                 )
-        
+
     return Response(html)
 
 @app.route('/reload_modules')

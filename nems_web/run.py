@@ -12,7 +12,7 @@ the server, potentially causing harm.
 
 """
 
-from nems_web.nems_analysis import app, socketio
+from nems_web.nems_analysis import app #socketio
 #import nems_config.NEMS_Path as np
 
 #from OpenSSL import SSL
@@ -26,9 +26,7 @@ from nems_web.nems_analysis import app, socketio
 #        np.path + '/nems_config/host.cert', np.path + '/nems_config/host.key'
 #        )
 
-socketio.run(
-        app, host="0.0.0.0", port=8000, debug=True,
-        use_reloader=True, #ssl_context=context
+app.run(
+        host="0.0.0.0", port=8000, debug=True,
+        use_reloader=False, #ssl_context=context
         )
-
-#app.run(host="0.0.0.0", port=8000, debug=True)

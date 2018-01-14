@@ -2,8 +2,11 @@
     flask.pocoo.org/snippets/63/ and .../62/
     flask-wtf.readthedocs.io/en/stable/install.html
     flask-login.readthedocs.io/en/latest/
-    
+
 """
+
+import logging
+log = logging.getLogger(__name__)
 
 from urllib.parse import urlparse, urljoin
 
@@ -50,7 +53,7 @@ def load_user(user_id):
                 )
         return user
     except Exception as e:
-        print(e)
+        log.info(e)
         return None
     finally:
         session.close()
@@ -58,7 +61,7 @@ def load_user(user_id):
 #@app.before_request
 #def before_request():
 #    g.user = current_user
-    
+
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     errors = []
@@ -74,8 +77,8 @@ def login():
             else:
                 errors += ['User returned None']
         else:
-            print('form errors:')
-            print(form.errors)
+            log.info('form errors:')
+            log.info(form.errors)
             return render_template(
                     'account_management/login.html',
                     form=form, errors=form.errors,
@@ -92,7 +95,7 @@ def logout():
     user = current_user
     user.authenticated = False
     logout_user()
-    
+
     return redirect(url_for('main_view'))
 
 @app.route('/register', methods=['GET', 'POST'])
@@ -109,20 +112,20 @@ def register():
                     firstname = form.firstname.data,
                     lastname = form.lastname.data,
                     )
-        
+
             session.add(new_user)
             session.commit()
             session.close()
 
             return redirect(url_for('login'))
         else:
-            print('form errors:')
-            print(form.errors)
+            log.info('form errors:')
+            log.info(form.errors)
             return render_template(
                     'account_management/register.html',
                     form=form, errors=form.errors,
                     )
-            
+
     return render_template(
             'account_management/register.html',
             form=form, errors=errors,
@@ -133,7 +136,7 @@ class User():
     # flask-login required class and methods
     # have this inherit from sqlalchemy base? then
     # these methods just get added on, but all db fields visible as attr.
-    
+
     def __init__(self, username, password, labgroup=None, sec_lvl=0):
         self.username = username
         self.password = password
@@ -143,22 +146,22 @@ class User():
             self.labgroup = 'SPECIAL_NONE_FLAG'
         self.sec_lvl = sec_lvl
         self.authenticated = False
-        
+
     def is_authenticated(self):
         # self.authenticated should be false until password verified in
         # login function.
         # should be reset to faulse on logout or if session ends.
         return self.authenticated
-    
+
     def is_active(self):
         # All users active - can implement checks here (like e-mail conf)
         # if desired.
         return True
-    
+
     def is_anonymous(self):
         # No users are anonymous - can implement this later if desired.
         return False
-    
+
     def get_id(self):
         # user_id should be the unicode rep of e-mail address
         # (should be stored in db table in that format)
@@ -170,32 +173,32 @@ class User():
                 )
         session.close()
         return user_id
-    
+
 
 class BlankUser():
     """ Blank dummy user, only used to avoid errors when checking for
     labgroup/username match in other views.
-    
+
     """
-    
+
     username = ''
     password = ''
     labgroup = 'SPECIAL_NONE_FLAG'
     sec_lvl = '1'
     authenticated = False
-    
+
     def __init__(self):
         pass
-    
-    
+
+
 def get_current_user():
     """Uses flask-login's current_user function to load the current global
     user object. If it returns flask-login's default mixin class instead of
     a User object from the class defined in this module, it will return a
     BlankUser object. Otherwise, it will return the currently stored User.
-    
+
     """
-    
+
     user = current_user
     try:
         # Default flask_login user class doesn't have this attribute,

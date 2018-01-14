@@ -31,10 +31,10 @@ argsdict = {
         }
 
 output = demo.run_script(argsdict)
-web_print('html string: ')
-web_print(output['html'])
-web_print('final dataframe used for plot: ')
-web_print(output['data'])
+log.info('html string: ')
+log.info(output['html'])
+log.info('final dataframe used for plot: ')
+log.info(output['data'])
 # the cellid column is just a duplicate of the index, but necessary
 # because bokeh's hovertool will only display the index as an integer
 

@@ -1,12 +1,11 @@
-import sys
-from io import StringIO
-import threading
+import logging
+log = logging.getLogger(__name__)
+werk = logging.getLogger('werkzeug')
+werk.setLevel(logging.DEBUG)
 
-from flask import Flask, url_for
-from flask_socketio import SocketIO
+from flask import Flask
 from flask_assets import Environment, Bundle
 
-from nems.utilities.output import SplitOutput
 
 app = Flask(__name__)
 app.config.from_object('nems_config.defaults.FLASK_DEFAULTS')
@@ -29,14 +28,33 @@ js = Bundle(
 #assets.register('css_all', css)
 assets.register('js_all', js)
 
-#try:
-#    app.config.from_object('nems_config.Flask_Config')
-#    
-#except:
-#    app.config.from_object('nems_config.defaults.FLASK_DEFAULTS')
-#    print('No flask config file detected, using default settings')
-#    pass
+# these don't get used for anything within this module,
+# just have to be loaded when app is initiated
+import nems_web.nems_analysis.views
+import nems_web.reports.views
+import nems_web.plot_functions.views
+import nems_web.model_functions.views
+import nems_web.modelpane.views
+import nems_web.account_management.views
+import nems_web.upload.views
+import nems_web.table_details.views
+import nems_web.run_custom.views
+import nems_web.admin.views
 
+
+# Removing socket io stuff for now - web_print not really used at the
+# moment since it was having issues, and some users have reported
+# performance problems depending on socketio settings. So unless needed
+# in the future, leaving disabled and hopefully will improve performance.
+# -jacob 1/13/2018
+
+#import sys
+#from io import StringIO
+#import threading
+#from flask_socketio import SocketIO
+#from flask import url_for
+#from nems.utilities.output import SplitOutput
+"""
 socketio = SocketIO(app, async_mode='threading')
 thread = None
 
@@ -46,6 +64,7 @@ if app.config['COPY_PRINTS']:
     sys.stdout = SplitOutput(stringio, orig_stdout)
 
 # redirect output of stdout to py_console div in web browser
+
 def py_console():
     while app.config['COPY_PRINTS']:
         # Set sampling rate for console reader in seconds
@@ -70,7 +89,7 @@ def py_console():
         except Exception as e:
             print(e)
             pass
-        
+
 # start looping py_console() in the background when socket is connected
 # but only if COPY_PRINTS is set to true
 @socketio.on('connect', namespace='/py_console')
@@ -96,18 +115,6 @@ def track_thread_count():
             print("active threads: ")
             for t in threading.enumerate():
                 print(t.name)
-        
-socketio.start_background_task(target=track_thread_count)
 
-# these don't get used for anything within this module, 
-# just have to be loaded when app is initiated
-import nems_web.nems_analysis.views
-import nems_web.reports.views
-import nems_web.plot_functions.views
-import nems_web.model_functions.views
-import nems_web.modelpane.views
-import nems_web.account_management.views
-import nems_web.upload.views
-import nems_web.table_details.views
-import nems_web.run_custom.views
-import nems_web.admin.views
+socketio.start_background_task(target=track_thread_count)
+"""

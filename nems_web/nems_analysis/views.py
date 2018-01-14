@@ -21,13 +21,15 @@ any other category (so far, just one function to serve error_log.txt).
 
 """
 
+import logging
+log = logging.getLogger(__name__)
+
 import copy
 import datetime
 from base64 import b64encode
-import json
 
 from flask import (
-        render_template, jsonify, request, 
+        render_template, jsonify, request,
         )
 from flask_login import login_required
 import pandas.io.sql as psql
@@ -43,7 +45,7 @@ from nems_web.plot_functions.PlotGenerator import PLOT_TYPES
 from nems_web.account_management.views import get_current_user
 #from nems.keyword_rules import keyword_test_routine
 from nems_web.run_custom.script_utils import scan_for_scripts
-from nems.utilities.print import web_print
+#from nems.utilities.print import web_print
 from nems_config.defaults import UI_OPTIONS, DEMO_MODE
 n_ui = UI_OPTIONS
 
@@ -56,11 +58,11 @@ except:
     sc = STORAGE_DEFAULTS
     AWS = False
 
-# TODO: Currently, analysis edit/delete/etc are handled by name, 
-#       which requires enforcing a unique name for each analysis. 
-#       Should re-work selector to includ id with each name so that 
+# TODO: Currently, analysis edit/delete/etc are handled by name,
+#       which requires enforcing a unique name for each analysis.
+#       Should re-work selector to includ id with each name so that
 #       id can be used instead, since it's the primary key.
-#       But each analysis should probably have a unique name anyway, 
+#       But each analysis should probably have a unique name anyway,
 #       so low priority change.
 
 
@@ -74,28 +76,27 @@ except:
 @app.route('/')
 def main_view():
     """Initialize the nems_analysis landing page.
-    
+
     Queries the database to get lists of available analyses, batches,
     status filters, tag filters, and results columns.
     Specifies defaults for results columns, row limit and sort column.
-    
+
     Returns:
     --------
     main.html : template
         The landing page template rendered with variables for analysislist,
         batchlist, collist, defaultcols, measurelist, defaultrowlimit,
         sortlist, defaultsort, statuslist, and taglist.
-    
+
     """
-    
-    
+
     # TODO: figure out how to integrate sec_lvl/superuser mode
     #       maybe need to add sec_lvl column to analysis/batches/results?
     #       then can compare in query ex: if user.sec_lvl > analysis.sec_lvl
     user = get_current_user()
-    
+
     session = Session()
-    
+
     # .all() returns a list of tuples, so it's necessary to pull the
     # name elements out into a list by themselves.
     analyses = (
@@ -115,7 +116,7 @@ def main_view():
     analysis_ids = [
             a.id for a in analyses
             ]
-    
+
     batchids = [
             i[0] for i in
             session.query(NarfBatches.batch)
@@ -144,7 +145,7 @@ def main_view():
             for i, batch in enumerate(batchids)
             ]
     batchlist.sort()
-    
+
     # Default settings for results display.
     # TODO: let user choose their defaults and save for later sessions
     # cols are in addition to cellid, modelname and batch,
@@ -159,7 +160,7 @@ def main_view():
             .filter(NarfAnalysis.name.in_(analysislist))
             .distinct().all()
             ]
-    
+
     # Separate tags into list of lists of strings.
     tags = [
             i[0].split(",") for i in
@@ -176,7 +177,7 @@ def main_view():
     # Finally, remove any blank tags and sort the list.
     taglist = [t for t in taglistbl if t != '']
     taglist.sort()
-    
+
     # Returns all columns in the format 'NarfResults.columnName,'
     # then removes the leading 'NarfResults.' from each string
     collist = ['%s'%(s) for s in NarfResults.__table__.columns]
@@ -191,13 +192,13 @@ def main_view():
     plotTypeList = PLOT_TYPES
     # imported at top from nems_web.run_scrits.script_utils
     scriptList = scan_for_scripts()
-    
+
     session.close()
-    
+
     return render_template(
             'main.html', analysislist=analysislist, analysis_ids=analysis_ids,
             batchlist=batchlist, collist=collist, defaultcols=defaultcols,
-            measurelist=measurelist, defaultrowlimit=defaultrowlimit, 
+            measurelist=measurelist, defaultrowlimit=defaultrowlimit,
             sortlist=sortlist, defaultsort=defaultsort,statuslist=statuslist,
             taglist=taglist, plotTypeList=plotTypeList, username=user.username,
             seclvl = int(user.sec_lvl), iso=n_ui.iso, snr=n_ui.snr,
@@ -208,10 +209,10 @@ def main_view():
 @app.route('/update_batch')
 def update_batch():
     """Update current batch selection after an analysis is selected."""
-    
+
     session = Session()
     blank = 0
-    
+
     aSelected = request.args.get('aSelected', type=str)
     batch = (
             session.query(NarfAnalysis.batch)
@@ -221,41 +222,41 @@ def update_batch():
     try:
         batch = batch.batch
     except Exception as e:
-        print(e)
+        log.info(e)
         batch = ''
         blank = 1
-    
+
     session.close()
-    
+
     return jsonify(batch=batch, blank=blank)
-    
+
 
 @app.route('/update_models')
 def update_models():
     """Update the list of modelnames in the model selector after an
     analysis is selected.
-    
+
     """
-    
+
     session = Session()
-    
+
     aSelected = request.args.get('aSelected', type=str)
-    
+
     modeltree = (
             session.query(NarfAnalysis.modeltree)
             .filter(NarfAnalysis.name == aSelected)
             .first()
             )
     # Pass modeltree string from NarfAnalysis to a ModelFinder constructor,
-    # which will use a series of internal methods to convert the tree string 
+    # which will use a series of internal methods to convert the tree string
     # to a list of model names.
     if modeltree:
         mf = ModelFinder(modeltree[0])
     else:
         return jsonify(modellist="Model tree not found.")
-        
+
     session.close()
-    
+
     return jsonify(modellist=mf.modellist)
 
 
@@ -263,23 +264,23 @@ def update_models():
 def update_cells():
     """Update the list of cells in the cell selector after a batch
     is selected (this will cascade from an analysis selection).
-    
+
     Also updates current batch in NarfAnalysis for current analysis.
-    
+
     """
-    
+
     session = Session()
     # Only get the numerals for the selected batch, not the description.
     bSelected = request.args.get('bSelected')
     aSelected = request.args.get('aSelected')
 
     celllist = [
-            i[0] for i in 
+            i[0] for i in
             session.query(NarfBatches.cellid)
             .filter(NarfBatches.batch == bSelected[:3])
             .all()
             ]
-    
+
     batchname = (
             session.query(sBatch)
             .filter(sBatch.id == bSelected[:3])
@@ -300,7 +301,7 @@ def update_cells():
 
     session.commit()
     session.close()
-    
+
     return jsonify(celllist=celllist)
 
 
@@ -308,16 +309,16 @@ def update_cells():
 def update_results():
     """Update the results table after a batch, cell or model selection
     is changed.
-    
+
     """
-    
+
     user = get_current_user()
     session = Session()
     nullselection = """
             MUST SELECT A BATCH AND ONE OR MORE CELLS AND
             ONE OR MORE MODELS BEFORE RESULTS WILL UPDATE
             """
-    
+
     bSelected = request.args.get('bSelected')
     cSelected = request.args.getlist('cSelected[]')
     mSelected = request.args.getlist('mSelected[]')
@@ -347,7 +348,7 @@ def update_results():
             getattr(NarfResults, c) for c in colSelected
             if hasattr(NarfResults, c)
             ]
-    
+
     # Package query results into a DataFrame
     results = psql.read_sql_query(
             Query(cols,session)
@@ -367,19 +368,19 @@ def update_results():
     resultstable = results.to_html(
             index=False, classes="table-hover table-condensed",
             )
-    
+
     session.close()
-    
+
     return jsonify(resultstable=resultstable)
 
 
 @app.route('/update_analysis')
 def update_analysis():
     """Update list of analyses after a tag and/or filter selection changes."""
-    
+
     user = get_current_user()
     session = Session()
-    
+
     tagSelected = request.args.getlist('tagSelected[]')
     statSelected = request.args.getlist('statSelected[]')
     # If special '__any' value is passed, set tag and status to match any
@@ -417,9 +418,9 @@ def update_analysis():
     analysis_ids = [
             a.id for a in analyses
             ]
-    
+
     session.close()
-    
+
     return jsonify(analysislist=analysislist, analysis_ids=analysis_ids)
 
 
@@ -427,21 +428,21 @@ def update_analysis():
 def update_analysis_details():
     """Update contents of the analysis details popover when the analysis
     selection is changed.
-    
+
     """
-    
+
     session = Session()
     # TODO: Find a better/centralized place to store these options.
     # Columns to display in detail popup - add/subtract here if desired.
     detailcols = n_ui.detailcols
-    
+
     aSelected = request.args.get('aSelected')
-    
+
     cols = [
-            getattr(NarfAnalysis,c) for c in detailcols 
+            getattr(NarfAnalysis,c) for c in detailcols
             if hasattr(NarfAnalysis,c)
             ]
-    
+
     # Package query results into a DataFrame
     results = psql.read_sql_query(
             Query(cols,session)
@@ -449,9 +450,9 @@ def update_analysis_details():
             .statement,
             session.bind
             )
-    
+
     detailsHTML = """"""
-    
+
     if results.size > 0:
         for col in detailcols:
             # Use a single line for id and status columns
@@ -465,18 +466,18 @@ def update_analysis_details():
                     <h5><strong>%s</strong>:</h5>
                     <p>%s</p>
                     """%(col,results.get_value(0, col))
-                    
+
     session.close()
-    
+
     return jsonify(details=detailsHTML)
 
 
 @app.route('/update_status_options')
 def update_status_options():
-    
+
     user = get_current_user()
     session = Session()
-    
+
     statuslist = [
         i[0] for i in
         session.query(NarfAnalysis.status)
@@ -489,16 +490,16 @@ def update_status_options():
         ]
 
     session.close()
-    
+
     return jsonify(statuslist=statuslist)
 
 
 @app.route('/update_tag_options')
 def update_tag_options():
-    
+
     user = get_current_user()
     session = Session()
-    
+
     tags = [
         i[0].split(",") for i in
         session.query(NarfAnalysis.tags)
@@ -518,11 +519,11 @@ def update_tag_options():
     # Finally, remove any blank tags and sort the list.
     taglist = [t for t in taglistbl if t != '']
     taglist.sort()
-    
+
     session.close()
-    
+
     return jsonify(taglist=taglist)
-    
+
 
 ##############################################################################
 ################      edit/delete/new  functions for Analysis Editor #########
@@ -539,15 +540,15 @@ def update_tag_options():
 @login_required
 def edit_analysis():
     """Take input from Analysis Editor modal and save it to the database.
-    
+
     Button : Edit Analysis
-    
+
     """
-    
+
     user = get_current_user()
     session = Session()
     modTime = datetime.datetime.now().replace(microsecond=0)
-    
+
     eName = request.args.get('name')
     eId = request.args.get('id')
     eStatus = request.args.get('status')
@@ -566,7 +567,7 @@ def edit_analysis():
     #        keyword_test_routine(modelname)
     #except Exception as e:
     #    return jsonify(success='Analysis not saved: \n' + str(e))
-    
+
     if eId == '__none':
         checkExists = False
     else:
@@ -575,7 +576,7 @@ def edit_analysis():
                 .filter(NarfAnalysis.id == eId)
                 .first()
                 )
-    
+
     if checkExists:
         a = checkExists
         if (
@@ -594,7 +595,7 @@ def edit_analysis():
                 a.lastmod = str(modTime)
             a.modeltree = eTree
         else:
-            web_print("You do not have permission to modify this analysis.")
+            log.info("You do not have permission to modify this analysis.")
             return jsonify(
                     success=("failed")
                     )
@@ -617,26 +618,26 @@ def edit_analysis():
                     lastmod=str(modTime), modeltree=eTree, username=user.username,
                     labgroup=user.labgroup, public='0'
                     )
-            
+
         session.add(a)
-    
-    # For verifying correct logging - comment these out 
+
+    # For verifying correct logging - comment these out
     # when not needed for testing.
-    #print("Added the following analysis to database:")
-    #print("------------------")
-    #print("name:"); print(a.name)
-    #print("question:"); print(a.question)
-    #print("answer:"); print(a.answer)
-    #print("status:"); print(a.status)
-    #print("tags:"); print(a.tags)
-    #print("model tree:"); print(a.modeltree)
-    #print("-----------------\n\n")
+    #log.info("Added the following analysis to database:")
+    #log.info("------------------")
+    #log.info("name:"); log.info(a.name)
+    #log.info("question:"); log.info(a.question)
+    #log.info("answer:"); log.info(a.answer)
+    #log.info("status:"); log.info(a.status)
+    #log.info("tags:"); log.info(a.tags)
+    #log.info("model tree:"); log.info(a.modeltree)
+    #log.info("-----------------\n\n")
     addedName = a.name
     session.commit()
     session.close()
-    
+
     # After handling submissions, return user to main page so that it
-    # refreshes with new analysis included in list    
+    # refreshes with new analysis included in list
     return jsonify(success="Analysis %s saved successfully."%addedName)
 
 
@@ -644,11 +645,11 @@ def edit_analysis():
 def get_current_analysis():
     """Populate the Analysis Editor form with the database contents for the
     currently selected analysis.
-    
+
     """
-    
+
     session = Session()
-    
+
     aSelected = request.args.get('aSelected')
     # If no analysis was selected, fill fields with blank text to
     # mimic 'New Analysis' behavior.
@@ -657,40 +658,40 @@ def get_current_analysis():
                 name='', status='', tags='', question='',
                 answer='', tree='',
                 )
-        
+
     a = (
         session.query(NarfAnalysis)
         .filter(NarfAnalysis.id == aSelected)
         .first()
         )
-    
+
     session.close()
-    
+
     return jsonify(
             id=a.id, name=a.name, status=a.status, tags=a.tags,
             question=a.question, answer=a.answer, tree=a.modeltree,
             )
-        
-    
+
+
 @app.route('/check_analysis_exists')
 def check_analysis_exists():
     """Check for a duplicate analysis name when an Analysis Editor form is
     submitted. If a duplicate exists, warn the user before overwriting.
-    
+
     """
-    
+
     session = Session()
-    
+
     nameEntered = request.args.get('nameEntered')
     analysisId = request.args.get('analysisId')
-    
+
     exists = False
     result = (
             session.query(NarfAnalysis)
             .filter(NarfAnalysis.name == nameEntered)
             .first()
             )
-             
+
     # only set to True if id is different, so that
     # overwriting own analysis doesn't cause flag
     if result and (
@@ -698,9 +699,9 @@ def check_analysis_exists():
             (int(result.id) != int(analysisId))
             ):
         exists = True
-        
+
     session.close()
-    
+
     return jsonify(exists=exists)
 
 
@@ -708,15 +709,15 @@ def check_analysis_exists():
 @login_required
 def delete_analysis():
     """Delete the selected analysis from the database."""
-    
+
     user = get_current_user()
     session = Session()
-    
+
     success = False
     aSelected = request.args.get('aSelected')
     if len(aSelected) == 0:
         return jsonify(success=success)
-    
+
     result = (
             session.query(NarfAnalysis)
             .filter(NarfAnalysis.id == aSelected)
@@ -725,31 +726,18 @@ def delete_analysis():
     if result is None:
         return jsonify(success=success)
 
-    # Leave these tests here incase accidental deletion
-    # or some other issue occurs.
-    # That way, the prints can be copy pasted back into a new analysis
-    # form to restore the database entry.
-    #print("checking for correct deletion. Deleting:")
-    #print("name:"); print(result.name)
-    #print("question:"); print(result.question)
-    #print("answer:"); print(result.answer)
-    #print("status:"); print(result.status)
-    #print("tags:"); print(result.tags)
-    #print("batch:"); print(result.batch)
-    #print("model tree:"); print(result.modeltree)
-
     if (
             result.public
             or (result.username == user.username)
             or (user.labgroup in result.labgroup)
-            ):
+        ):
         success = True
         session.delete(result)
         session.commit()
     else:
-        web_print("You do not have permission to delete this analysis.")
+        log.info("You do not have permission to delete this analysis.")
         return jsonify(success=success)
-    
+
     session.close()
 
     return jsonify(success=success)
@@ -766,11 +754,11 @@ def delete_analysis():
 def get_preview():
     """Queries the database for the filepath to the preview image
     for the selected cell, batch and model combination(s)
-    
+
     """
-    
+
     session = Session()
-    
+
     # Only get the numerals for the selected batch, not the description.
     bSelected = request.args.get('bSelected', type=str)[:3]
     cSelected = request.args.getlist('cSelected[]')
@@ -783,11 +771,11 @@ def get_preview():
                 'nems_saved_images/batch291/{0}/{1}.png'
                 .format(cSelected[0], mSelected[0])
                 )
-        print("Inside get_preview, passed DEMO_MODE check. Key is: {0}".format(key))
+        log.info("Inside get_preview, passed DEMO_MODE check. Key is: {0}".format(key))
         fileobj = s3_client.get_object(Bucket='nemspublic', Key=key)
         image=str(b64encode(fileobj['Body'].read()))[2:-1]
         return jsonify(image=image)
-    
+
     figurefile = None
     # only need this to be backwards compatible with NARF preview images?
     path = (
@@ -797,37 +785,37 @@ def get_preview():
             .filter(NarfResults.modelname.in_(mSelected))
             .first()
             )
-    
+
     if not path:
         session.close()
         return jsonify(image='missing preview')
     else:
         figurefile = str(path.figurefile)
         session.close()
-    
+
     # TODO: Make this not ugly, and incorporate check for sample images
-    
+
     if AWS:
         s3_client = boto3.client('s3')
         try:
             key = figurefile[len(sc.DIRECTORY_ROOT):]
             fileobj = s3_client.get_object(Bucket=sc.PRIMARY_BUCKET, Key=key)
             image = str(b64encode(fileobj['Body'].read()))[2:-1]
-            
+
             return jsonify(image=image)
         except Exception as e:
-            print(e)
-            print("key was: {0}".format(path.figurefile[len(sc.DIRECTORY_ROOT)]))
+            log.info(e)
+            log.info("key was: {0}".format(path.figurefile[len(sc.DIRECTORY_ROOT)]))
             try:
                 key = figurefile[len(sc.DIRECTORY_ROOT)-1:]
                 fileobj = s3_client.get_object(
-                        Bucket=sc.PRIMARY_BUCKET, 
+                        Bucket=sc.PRIMARY_BUCKET,
                         Key=key
                         )
                 image = str(b64encode(fileobj['Body'].read()))[2:-1]
                 return jsonify(image=image)
             except Exception as e:
-                print(e)
+                log.info(e)
                 with open(app.static_folder + '/lbhb_logo.png', 'r+b') as img:
                     image = str(b64encode(img.read()))[2:-1]
                 return jsonify(image=image)
@@ -843,13 +831,13 @@ def get_preview():
                     image = str(b64encode(img.read()))[2:-1]
                 return jsonify(image=image)
             except Exception as e:
-                print(e)
+                log.info(e)
                 with open(app.static_folder + '/lbhb_logo.png', 'r+b') as img:
                     image = str(b64encode(img.read()))[2:-1]
                 return jsonify(image=image)
 
-    
-    
+
+
 ###############################################################################
 #################   SAVED SELECTIONS    #######################################
 ###############################################################################
@@ -892,12 +880,12 @@ def set_saved_selections():
     user_entry.selections = saved_selections
     session.commit()
     session.close()
-    
+
     return jsonify(response='selections saved', null=False)
 
 
 ############ jerb test #################
-    
+
 @app.route('/jerb_viewer')
 def jerb_viewer():
     jerb_json = make_jerb_json()
@@ -905,11 +893,11 @@ def jerb_viewer():
 
 
 def make_jerb_json():
-    
+
     user = get_current_user()
-    
+
     session = Session()
-    
+
     # .all() returns a list of tuples, so it's necessary to pull the
     # name elements out into a list by themselves.
     analyses = (
@@ -955,16 +943,16 @@ def make_jerb_json():
             for i, batch in enumerate(batchids)
             ]
     batchlist.sort()
-    
+
     session.close()
-    
+
     s3 = boto3.resource('s3')
     bucket = s3.Bucket('nemsdata')
-    
+
     jerb_json = {'name':'Analysis',
             'children':[],
             }
-    
+
     for i, analysis in enumerate(analysislist):
         jerb_json['children'].append({'name':analysis, 'children':[]})
         jerb_json['children'][i]['children'].extend([
@@ -985,8 +973,7 @@ def make_jerb_json():
                         ]
                 }
                 ])
-        
+
     return jerb_json
-    
-    
-    
+
+

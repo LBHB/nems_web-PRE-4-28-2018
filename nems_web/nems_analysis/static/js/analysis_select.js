@@ -1,8 +1,10 @@
 $(document).ready(function(){
         
     // TODO: Split this up into multile .js files? getting a bit crowded in here,
-    // could group by functionality at this point.    
+    // could group by functionality at this point.
 
+    // Socketio functionality disabled for now.
+    /*
     namespace = '/py_console'
 
     var socket = io.connect(
@@ -11,14 +13,13 @@ $(document).ready(function(){
             + location.port + namespace,
             {'timeout':0}
             );
-    /*
     var socket = io.connect(
             null,
             {   port: location.port,
                 rememberTransport: false
             }
             )
-    */
+
     socket.on('connect', function() {
        console.log('socket connected');
     });
@@ -34,6 +35,7 @@ $(document).ready(function(){
                 );
     });
     
+    */
     // use this in place of console.log to send to py_console
     function py_console_log(message){
         var color = '';
@@ -45,7 +47,7 @@ $(document).ready(function(){
                 "<p class='py_con_msg'" + color + ">" + message + "</p>"
                 );
     }
-
+    
     //initializes bootstrap popover elements
     $('[data-toggle="popover"]').popover({
         trigger: 'click',
