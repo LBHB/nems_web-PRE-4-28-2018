@@ -30,6 +30,6 @@ from gevent.wsgi import WSGIServer
 # TODO: app.run() not meant to be used in production, just for testing
 #       according to Flask docs. Need to replace with better server.
 #       flask.pocoo.org/docs/0.12/deploying/wsgi-standalone/
-#app.run(host="0.0.0.0", port=8000, debug=True, use_reloader=False)
-http_server = WSGIServer(('', 8000), app)
-http_server.serve_forever()
+app.run(host="0.0.0.0", port=8000, debug=True, use_reloader=False)
+#http_server = WSGIServer(('', 8000), app)
+#http_server.serve_forever()
