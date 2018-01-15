@@ -32,3 +32,32 @@ class AnalysisPanel(Widget):
                     "</script>")
 
         self._html_string = html
+
+
+# Example views function using new format
+from flask import jsonify, request
+from sqlalchemy import or_
+
+from . import app
+from nems.db import Session, NarfAnalysis
+
+@app.route('/update_analysis')
+def update_analysis():
+    user = 'get current user'
+    ui = user.ui_state
+    analysis = ui['AnalysisPanel']
+    session = Session()
+    # TODO: Need to start using post, the gets are causing
+    #       issues with other server apps (request string too long)
+    tags = request.args.getlist('tags')
+    # skipping some steps that are mirrored or the same as before
+    new_analysis = (
+            session.query(NarfAnalysis)
+            .filter(or_(NarfAnalysis.tags.ilike('stuff based on tags')))
+            .all()
+            )
+    analysis.names, analysis.ids = [a.name for a in new_analysis],\
+                                   [a.id for a in new_analysis]
+
+    session.close()
+    return jsonify(html=analysis.html)

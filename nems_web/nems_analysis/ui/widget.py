@@ -1,4 +1,5 @@
 from functools import partialmethod
+import json
 
 class Widget:
     """Base class for user-interface elements for the NEMS web interface.
@@ -7,7 +8,8 @@ class Widget:
     contents in the web interface. For example, an AnalysisPanel
     Widget might define .analysis_names and .analysis_ids. A Widget
     also has a @property-decorated "html" method for fetching its
-    representation as an HTML-string.
+    representation as an HTML-string. Finally, Widgets have a
+    to_json for serializing the current state of the UI.
 
     Arguments:
         contents : dict
@@ -36,8 +38,12 @@ class Widget:
     flagged = False
     # Raw HTML string to be rendered in the web page
     # *SHOULD NOT BE REFERENCED DIRECTLY UNDER NORMAL CIRCUMSTANCES*
-    # Direct references to .html instread (see the class method below)
+    # Use references to .html instead (see the class method below)
     _html_string = None
+    # json string to be saved in database or to file
+    # *SHOULD NOT BE REFERENCED DIRECTLY UNDER NORMAL CIRCUMSTANCES*
+    # Use references to .json instead (see the class method below)
+    _json_string = None
 
     def __init__(self, contents=None, **kwargs):
         self.contents = contents if contents else None
@@ -115,11 +121,35 @@ class Widget:
 
         self._html_string = html
 
+    def _generate_json(self):
+        """TODO"""
+        # Mostly just needs to generate a dictionary similar to
+        # the contents argument, but also need to track which
+        # items are selected.
+        # NOTE: Could just save the html string to database instead?
+        #       And keep track of selections in that method when appending
+        #       lists. Would eliminate the need for to_jsonify
+        #       (Could still save user.ui_state as json if wanted)
+        self._json_string = json.dumps({'Not':'Implemented Yet'})
+
     @property
     def html(self):
         if not self.flagged:
             return self._html_string
         else:
+            # regen json as well to keep sycned with flag
             self._generate_html()
+            self._generate_json()
             self.flagged = False
             return self._html_string
+
+    @property
+    def json(self):
+        if not self.flagged:
+            return self._json_string
+        else:
+            # regen html as well to keep synced with flag
+            self._generate_html()
+            self._generate_json()
+            self.flagged = False
+            return self._json_string
