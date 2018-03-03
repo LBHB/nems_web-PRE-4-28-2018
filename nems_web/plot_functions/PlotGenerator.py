@@ -89,14 +89,21 @@ class PlotGenerator():
             self.measure = [measure] + extra_cols
         self.fair = fair
         self.outliers = outliers
+        log.debug("Checking for common prefixes in modelnames...")
         self.abbr, self.pre, self.suf = prx.find_common(models)
+        log.debug("Got back:\nabbr:{}\npre:{}\nsuff:{}\n"
+                  .format(self.abbr, self.pre, self.suf))
         data.replace(models, self.abbr, inplace=True)
-        self.models = self.abbr
+        log.debug("Replaced modelnames with abbreviations.")
+        self.models = self.abbr 
+        log.info("Forming data array inside PlotGenerator...")
         self.data = self.form_data_array(data)
 
         # Use this inside views function to check whether generate_plot
         # should be invoked.
         if (self.data.size == 0):
+            log.info("All data filterd out when forming data array,"
+                     "setting self.emptycheck to True")
             self.emptycheck = True
         else:
             self.emptycheck = False
@@ -281,6 +288,8 @@ class PlotGenerator():
                 for m in modellist:
                     if newData.loc[c,m].isnull().values.any():
                         newData.drop(c, level='cellid', inplace=True)
+                        log.debug("Dropping cellid {}, not fit by model {}"
+                                  .format(c, m))
                         break
 
 

@@ -124,7 +124,7 @@ def generate_plot_html():
             .statement,
             session.bind
             )
-
+    log.debug("Results retrieved, with size: {}".format(results.size))
     # get back list of models that matched other query criteria
     results_models = [
             m for m in
@@ -136,11 +136,13 @@ def generate_plot_html():
             m for m in mSelected
             if m in results_models
             ]
+    log.debug("Modelnames re-ordered and filtered to: {}".format(ordered_models))
     Plot_Class = getattr(pg, plotType)
     plot = Plot_Class(
             data=results, measure=measure, models=ordered_models,
             fair=onlyFair, outliers=includeOutliers,
             )
+    log.debug("Plot successfully initialized")
     if plot.emptycheck:
         log.info('Plot checked empty after forming data array')
         return jsonify(script='Empty',div='Plot')
