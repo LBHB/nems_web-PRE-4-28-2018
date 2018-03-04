@@ -47,7 +47,6 @@ from nems_web.account_management.views import get_current_user
 from nems_web.run_custom.script_utils import scan_for_scripts
 #from nems.utilities.print import web_print
 from nems_config.defaults import UI_OPTIONS, DEMO_MODE
-import nems.plots.file as npf
 n_ui = UI_OPTIONS
 
 try:
@@ -811,13 +810,56 @@ def load_figure(figurefile):
         img = 'read from s3'
     else:
         # assume file is local and figurepath is full, absolute path
-        img = npf.load_figure_bytes(filepath=figurefile, format='png')
+        img = load_figure_bytes(filepath=figurefile, format='png')
     # after bytes string read by one of the methods above,
     # encode with b64 and remove first 2 characters and last character.
     # (Not really sure why it's necessary, but javascript freaks out if
     #  those bits are there).
     image = str(b64encode(img))[2:-1]
     return image
+
+# temporarily copied from nems dev
+def load_figure_bytes(filepath=None, modelspecs=None, load_dir=None,
+                      format='png'):
+    '''
+    Loads a saved figure image as a bytes object that can be used
+    by the web UI or other functions.
+
+    Arguments
+    --------
+    filepath : str or fileobj
+        Specifies the location where the image was stored.
+        If not provided, modelspecs must be given instead. If a string,
+        it should be a complete, absolute path to the save location.
+
+    modelspecs : list
+        A list of modelspecs that can be used to determine a filepath
+        based on nems.modelspec.get_modelspec_longname() and load_dir.
+
+    load_dir : str
+        Specifies the base directory in which to save the figure,
+        if modelspecs are used.
+
+    format : str
+        Specifies the file format that was used to save the figure.
+
+    Returns
+    -------
+    img : bytes object
+        Contains the raw data for the loaded image.
+
+    '''
+    #if filepath and not modelspecs:
+    fname = filepath
+    #elif modelspecs and not filepath:
+    #    fname = _get_figure_filepath(load_dir, modelspecs, format)
+    #else:
+    #    raise ValueError("load_figure_img() must be provided either"
+    #                     "a filepath or a list of modelspecs.")
+    #logging.info("Loading figure image from: {}".format(fname))
+    with open(fname, 'r+b') as f:
+        img = f.read()
+    return img
 
 """
     # TODO: Make this not ugly
