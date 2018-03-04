@@ -47,6 +47,7 @@ from nems_web.account_management.views import get_current_user
 from nems_web.run_custom.script_utils import scan_for_scripts
 #from nems.utilities.print import web_print
 from nems_config.defaults import UI_OPTIONS, DEMO_MODE
+import nems.plots.file as npf
 n_ui = UI_OPTIONS
 
 try:
@@ -764,20 +765,20 @@ def get_preview():
     cSelected = request.args.getlist('cSelected[]')
     mSelected = request.args.getlist('mSelected[]')
 
+    ### DEPRECATED ? ###
     # if using demo database, get preview image from aws public bucket
-    if DEMO_MODE:
-        s3_client = boto3.client('s3')
-        key = (
-                'nems_saved_images/batch291/{0}/{1}.png'
-                .format(cSelected[0], mSelected[0])
-                )
-        log.info("Inside get_preview, passed DEMO_MODE check. Key is: {0}".format(key))
-        fileobj = s3_client.get_object(Bucket='nemspublic', Key=key)
-        image=str(b64encode(fileobj['Body'].read()))[2:-1]
-        return jsonify(image=image)
+    #if DEMO_MODE:
+    #    s3_client = boto3.client('s3')
+    #    key = (
+    #            'nems_saved_images/batch291/{0}/{1}.png'
+    #            .format(cSelected[0], mSelected[0])
+    #            )
+    #    log.info("Inside get_preview, passed DEMO_MODE check. Key is: {0}".format(key))
+    #    fileobj = s3_client.get_object(Bucket='nemspublic', Key=key)
+    #    image=str(b64encode(fileobj['Body'].read()))[2:-1]
+    #    return jsonify(image=image)
 
     figurefile = None
-    # only need this to be backwards compatible with NARF preview images?
     path = (
             session.query(NarfResults)
             .filter(NarfResults.batch == bSelected)
@@ -793,7 +794,33 @@ def get_preview():
         figurefile = str(path.figurefile)
         session.close()
 
-    # TODO: Make this not ugly, and incorporate check for sample images
+    # TODO: where will load_figure live? nems_db, nems_baphy, nems_web??
+    #       should parse figurefile to figure out if it's
+    #       http, s3, or local, then return the image as a b64 string
+    b64img = load_figure(figurefile)
+    return jsonify(image=b64img)
+
+def load_figure(figurefile):
+    if figurefile.startswith('http'):
+        # TODO
+        # use nems_db api
+        img = 'read through api'
+    elif figurefile.startswith('s3'):
+        # TODO
+        # use s3
+        img = 'read from s3'
+    else:
+        # assume file is local and figurepath is full, absolute path
+        img = npf.load_figure_bytes(filepath=figurefile, format='png')
+    # after bytes string read by one of the methods above,
+    # encode with b64 and remove first 2 characters and last character.
+    # (Not really sure why it's necessary, but javascript freaks out if
+    #  those bits are there).
+    image = str(b64encode(img))[2:-1]
+    return image
+
+"""
+    # TODO: Make this not ugly
 
     if AWS:
         s3_client = boto3.client('s3')
@@ -821,7 +848,6 @@ def get_preview():
                 return jsonify(image=image)
     else:
         try:
-            #local = sc.DIRECTORY_ROOT + path.figurefile.strip('/auto/data/code')
             with open('/' + figurefile, 'r+b') as img:
                 image = str(b64encode(img.read()))[2:-1]
             return jsonify(image=image)
@@ -835,7 +861,7 @@ def get_preview():
                 with open(app.static_folder + '/lbhb_logo.png', 'r+b') as img:
                     image = str(b64encode(img.read()))[2:-1]
                 return jsonify(image=image)
-
+"""
 
 
 ###############################################################################

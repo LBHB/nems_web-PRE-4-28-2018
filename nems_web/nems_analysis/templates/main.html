@@ -4,7 +4,7 @@
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <!-- The above 3 meta tags *must* come first in the head; any other head 
+    <!-- The above 3 meta tags *must* come first in the head; any other head
     content must come *after* these tags -->
     <meta name="description" content="">
     <meta name="author" content="">
@@ -16,28 +16,28 @@
 
     <!-- Bootstrap css -->
     <link rel="stylesheet" href=
-    "https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" 
-    integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" 
+    "https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css"
+    integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u"
     crossorigin="anonymous">
 
     <!-- Optional theme -->
     <link rel="stylesheet" href=
-    "https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap-theme.min.css" 
-    integrity="sha384-rHyoN1iRsVXV4nD0JutlnGaslCJuC7uwjduW9SVrLvRYooPp2bWYgmgJQIXwl/Sp" 
-    crossorigin="anonymous">    
+    "https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap-theme.min.css"
+    integrity="sha384-rHyoN1iRsVXV4nD0JutlnGaslCJuC7uwjduW9SVrLvRYooPp2bWYgmgJQIXwl/Sp"
+    crossorigin="anonymous">
 
     <!-- DataTables jQuery plugin -->
     <link rel="stylesheet" href=
     "https://cdn.datatables.net/1.10.15/css/jquery.dataTables.min.css">
-    
+
     <!-- Bokeh dependencies -->
     <link rel="stylesheet" type="text/css"
-        href="http://cdn.pydata.org/bokeh/release/bokeh-0.12.10.min.css">
+        href="http://cdn.pydata.org/bokeh/release/bokeh-0.12.14.min.css">
     <link rel="stylesheet" type="text/css"
-        href="http://cdn.pydata.org/bokeh/release/bokeh-widgets-0.12.10.min.css">
-    <script src="http://cdn.pydata.org/bokeh/release/bokeh-0.12.10.min.js"></script>
-    <script src="http://cdn.pydata.org/bokeh/release/bokeh-widgets-0.12.10.min.js"></script>
-    
+        href="http://cdn.pydata.org/bokeh/release/bokeh-widgets-0.12.14.min.css">
+    <script src="http://cdn.pydata.org/bokeh/release/bokeh-0.12.14.min.js"></script>
+    <script src="http://cdn.pydata.org/bokeh/release/bokeh-widgets-0.12.14.min.js"></script>
+
     <!-- Custom styles for this template -->
     <link href="{{ url_for('static', filename='css/main.css') }}" rel="stylesheet">
     {#
@@ -45,7 +45,7 @@
         <link href="{{ ASSET_URL }}" rel="stylesheet">
     {% endassets %}
     #}
-    
+
   </head>
 
   <body>
@@ -76,7 +76,7 @@
                     <button type="button"
                             class="btn btn-default btn-xs"
                             data-toggle="popover"
-                            id="analysisDetails"          
+                            id="analysisDetails"
                             data-placement="bottom"
                             data-content="No Selection"
                             data-html="true">
@@ -101,14 +101,14 @@
                                 New
                     </button>
                 </div>
-                
+
 
                         <!-- modal div is at bottom of document -->
-                
+
                 <div class="input-group-btn editorGroup">
                     <button type="button"
                             class="btn btn-default btn-xs"
-                            id="deleteAnalysis"> 
+                            id="deleteAnalysis">
                                 Delete
                     </button>
                 </div>
@@ -176,7 +176,7 @@
                                 checked>
                                     All
                         <select multiple="multiple"
-                                class="form-control plot-form" 
+                                class="form-control plot-form"
                                 name="celllist"
                                 size="10"
                                 id="cellSelector">
@@ -197,7 +197,7 @@
                                checked>
                                     All
                         <select multiple="multiple"
-                                class="form-control plot-form" 
+                                class="form-control plot-form"
                                 name="modelnames"
                                 size="10"
                                 id="modelSelector">
@@ -259,7 +259,7 @@
                         Measure
                     </label>
                     <select class="form-control plot-form"
-                            id="measureSelector" 
+                            id="measureSelector"
                             name="measure">
                         {% for measure in measurelist %}
                             <option value="{{ measure }}"
@@ -289,7 +289,7 @@
                         <label for="plotTypeSelector">
                             Plot Type
                         </label>
-                        <select class="form-control plot-form" 
+                        <select class="form-control plot-form"
                                 id="plotTypeSelector">
                             {% for type in plotTypeList %}
                                 <option value="{{ type }}">
@@ -346,7 +346,7 @@
                 </label>
                 <input type="checkbox"
                        id="onlyFair"
-                       name="onlyFair" 
+                       name="onlyFair"
                        checked value="1">
             </div>
             </div></div>
@@ -554,7 +554,7 @@
                                         </label>
                                     </div>
                                     <div class="col-xs-8" style="margin-left: 0px; padding-left: 5px;">
-                                        <select class="form-control" 
+                                        <select class="form-control"
                                                 name="tablecolumns"
                                                 id="tableSortSelector">
                                         {% for sort in sortlist %}
@@ -662,7 +662,7 @@
     <div class="row" id="pyConRow"><div class="col-xs-12" style="height: 100%;">
         <div class="jumbotron ui-widget-content"
              id="py_console">
-        </div>   
+        </div>
     </div></div>
 
     <!-- close outer containers -->
@@ -684,7 +684,7 @@
                     </button>
                 </div><!-- header -->
                 <div class="modal-body">
-                    
+
                         <div class="container-fluid">
                         <div class="form-group">
 
@@ -698,7 +698,7 @@
                             <input type="hidden" name="editId" value="__none">
                             </div>
                             </div>
-                            
+
                             <div class="col-xs-6">
                             <div class="input-group span3">
                             <span class="input-group-addon" id="editStatusLabel">
@@ -708,7 +708,7 @@
                             </div>
                             </div>
                         </div><!-- row -->
-                        
+
                         <div class="row">
                             <div class="col-xs-6">
                             <div class="input-group span3">
@@ -719,7 +719,7 @@
                             </div>
                             </div>
                         </div>
-                        
+
                         <div class="row">
                             <div class="col-xs-12">
                             <div class="input-group">
@@ -730,7 +730,7 @@
                             </div>
                             </div>
                         </div>
-                        
+
                         <div class="row">
                             <div class="col-xs-12">
                             <div class="input-group">
@@ -741,7 +741,7 @@
                             </div>
                             </div>
                         </div>
-                        
+
                         <div class="row">
                             <div class="col-xs-12">
                             <div class="input-group">
@@ -752,7 +752,7 @@
                             </div>
                             </div>
                         </div>
-                        
+
                         </div><!-- form-group -->
                         </div><!--container-->
 
@@ -760,7 +760,7 @@
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-dismiss="modal">
                     Cancel</button>
-                    
+
                     <!-- assign this as form submission -->
                     <button type="button" class="btn btn-primary" id="submitEditForm"
                     > Save Analysis </button>
@@ -836,7 +836,7 @@
                 </div><!-- header -->
                 <div class="modal-body">
                     <select multiple="multiple"
-                            class="form-control" 
+                            class="form-control"
                             name="tablecolumns"
                             size="7"
                             id="tableColSelector"
@@ -852,7 +852,7 @@
             </div><!--content -->
         </div><!--dialog-->
     </div><!--modal-->
-  
+
     <div class="modal" id="fitOptionsModal" tabindex="-1" role="dialog">
         <div class="modal-dialog modal-md" role="document">
             <div class="modal-content">
@@ -924,13 +924,13 @@
                 </div><!-- body -->
             </div><!--content -->
         </div><!--dialog-->
-    </div><!--modal-->    
+    </div><!--modal-->
 
     <div id="loadingPopup">
         <div id="loadingMessage">
         </div>
     </div>
-    
+
     <!-- hidden form for modelpane submission -->
     <div style="display:none;">
     <form class="form" id="modelpane" method="POST" target="_blank"
@@ -940,7 +940,7 @@
         <input type="text" id="p_modelname" name="modelname" value="">
     </form>
     </div>
-    
+
     <!-- hidden form for stat rep submission -->
     <div style="display:none;">
     <form class="form" id="batchPerfForm" method="POST" target="_blank"
@@ -951,7 +951,7 @@
           <input type="hidden" id="batchPerfFindAll" name="findAll" value="">
     </form>
     </div>
-    
+
     <!-- hidden form for fit rep submission -->
     <div style="display:none;">
     <form class="form" id="fitRepForm" method="POST" target="_blank"
@@ -961,7 +961,7 @@
           <input type="hidden" id="fitRepModels" name="mSelected" value="">
     </form>
     </div>
-    
+
     <div style="display:none;" id="plotValDefaults">
         <input type="hidden" id="default_iso" value="{{ iso }}">
         <input type="hidden" id="default_snr" value="{{ snr }}">
@@ -973,29 +973,29 @@
             <input type="hidden" name="{{ col }}" value="{{ col }}">
         {% endfor %}
     </div>
-    
+
     <!-- non-minified version. easier debugging? -->
     <script
               src="https://code.jquery.com/jquery-3.2.1.js"
               integrity="sha256-DZAnKJ/6XZ9si04Hgrsxu/8s717jcIzLy3oi35EouyE="
               crossorigin="anonymous"></script>
-        
+
     <!-- load jquery ui -->
     <script src=
         "https://code.jquery.com/ui/1.12.1/jquery-ui.js"></script>
 
-    <!-- DataTables jQuery plugin -->    
+    <!-- DataTables jQuery plugin -->
     <script src=
     "https://cdn.datatables.net/1.10.15/js/jquery.dataTables.min.js"></script>
-        
+
     <!-- Bootstrap JavaScript -->
-    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js" 
-    integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa" 
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"
+    integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa"
     crossorigin="anonymous"></script>
-    
+
     <!-- socketio source -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/2.0.1/socket.io.js"></script>
-    
+
     <!-- ajax javascript -->
     <script type="text/javascript">
         $SCRIPT_ROOT = {{ request.script_root|tojson|safe }};</script>
