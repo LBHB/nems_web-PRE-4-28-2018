@@ -27,6 +27,7 @@ log = logging.getLogger(__name__)
 import copy
 import datetime
 from base64 import b64encode
+from urllib.parse import urlparse
 
 from flask import (
         render_template, jsonify, request,
@@ -837,14 +838,16 @@ def get_preview():
 def load_figure(figurefile):
     if figurefile.startswith('http'):
         # TODO
-        # use nems_db api
+        # use nems_db api to retrieve figure from file server
         img = 'read through api'
     elif figurefile.startswith('s3'):
-        # TODO
-        # - make sure s3:// is in figurepaths - this is not true for
-        #   old figures
-        # use s3
-        img = 'read from s3'
+        # TODO: old figurefile entries in MYSQL don't have s3:// in them
+        s3_client = boto3.client('s3')
+        parsed = urlparse(figurefile)
+        bucket = parsed.netloc
+        key = parsed.path
+        fileobj = s3_client.get_object(Bucket=bucket, Key=key)
+        img = fileobj['Body'].read()
     else:
         # assume file is local and figurepath is full, absolute path
         img = load_figure_bytes(filepath=figurefile, format='png')
