@@ -793,11 +793,46 @@ def get_preview():
         figurefile = str(path.figurefile)
         session.close()
 
-    # TODO: where will load_figure live? nems_db, nems_baphy, nems_web??
-    #       should parse figurefile to figure out if it's
-    #       http, s3, or local, then return the image as a b64 string
-    b64img = load_figure(figurefile)
-    return jsonify(image=b64img)
+    if AWS:
+        s3_client = boto3.client('s3')
+        try:
+            key = figurefile[len(sc.DIRECTORY_ROOT):]
+            fileobj = s3_client.get_object(Bucket=sc.PRIMARY_BUCKET, Key=key)
+            image = str(b64encode(fileobj['Body'].read()))[2:-1]
+
+            return jsonify(image=image)
+        except Exception as e:
+            log.exception(e)
+            log.info("key was: {0}".format(path.figurefile[len(sc.DIRECTORY_ROOT)]))
+            try:
+                key = figurefile[len(sc.DIRECTORY_ROOT)-1:]
+                fileobj = s3_client.get_object(
+                        Bucket=sc.PRIMARY_BUCKET,
+                        Key=key
+                        )
+                image = str(b64encode(fileobj['Body'].read()))[2:-1]
+                return jsonify(image=image)
+            except Exception as e:
+                log.exception(e)
+                try:
+                    b64img = load_figure(figurefile)
+                    return jsonify(image=b64img)
+                except Exception as e:
+                    log.exception(e)
+                    with open(app.static_folder + '/lbhb_logo.png', 'r+b') as img:
+                        image = str(b64encode(img.read()))[2:-1]
+                    return jsonify(image=image)
+    else:
+        # TODO: this should eventually be the only thing that gets
+        #       called - above try/except ugliness is temporary for
+        #       backwards compatibility
+        b64img = load_figure(figurefile)
+        return jsonify(image=b64img)
+
+# TODO: where will load_figure live? nems_db, nems_baphy, nems_web??
+#       should parse figurefile to figure out if it's
+#       http, s3, or local, then return the image as a b64 string
+
 
 def load_figure(figurefile):
     if figurefile.startswith('http'):
@@ -806,6 +841,8 @@ def load_figure(figurefile):
         img = 'read through api'
     elif figurefile.startswith('s3'):
         # TODO
+        # - make sure s3:// is in figurepaths - this is not true for
+        #   old figures
         # use s3
         img = 'read from s3'
     else:
