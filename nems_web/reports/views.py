@@ -15,7 +15,7 @@ import numpy as np
 from flask import request, render_template, jsonify
 
 from nems_web.nems_analysis import app
-from nems.db import Session, NarfResults, cluster_tQueue, cluster_Session
+from nems_db.db import Session, NarfResults, cluster_tQueue, cluster_Session
 from nems_web.plot_functions.reports import Performance_Report, Fit_Report
 from nems.speed_test import Timer
 

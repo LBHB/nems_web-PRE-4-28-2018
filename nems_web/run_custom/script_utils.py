@@ -6,7 +6,7 @@ import pandas as pd
 import numpy as np
 import pandas.io.sql as psql
 
-from nems.db import NarfBatches, NarfResults
+from nems_db.db import NarfBatches, NarfResults
 import nems_scripts as ns
 
 def scan_for_scripts():

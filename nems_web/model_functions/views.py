@@ -24,7 +24,7 @@ from flask import jsonify, request
 from flask_login import login_required
 
 from nems_web.nems_analysis import app
-from nems.db import NarfResults, enqueue_models, update_results_table
+from nems_db.db import NarfResults, enqueue_models, update_results_table
 import nems.main as nems
 from nems_web.account_management.views import get_current_user
 from nems.keyword_rules import keyword_test_routine

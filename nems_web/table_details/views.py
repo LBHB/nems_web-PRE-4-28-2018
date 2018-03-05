@@ -4,7 +4,7 @@ from flask import redirect, Response, url_for, render_template
 
 from nems_web.nems_analysis import app
 import nems.keyword as nk
-from nems.db import Session, gCellMaster
+from nems_db.db import Session, gCellMaster
 
 @app.route('/cell_details/<cellid>')
 def cell_details(cellid):
