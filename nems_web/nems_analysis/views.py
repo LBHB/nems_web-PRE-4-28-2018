@@ -846,6 +846,10 @@ def load_figure(figurefile):
         parsed = urlparse(figurefile)
         bucket = parsed.netloc
         key = parsed.path
+        if key.startswith('/'):
+            key = key.strip('/')
+        log.warn("Attemping to load figure using bucket: {}\n"
+                 "and key: {}".format(bucket, key))
         fileobj = s3_client.get_object(Bucket=bucket, Key=key)
         img = fileobj['Body'].read()
     else:
