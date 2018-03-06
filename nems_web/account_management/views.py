@@ -41,7 +41,7 @@ def load_user(user_id):
                 .first()
                 )
         if not sqla_user:
-            raise Exception('No account with that email')
+            raise Exception()
         # assign attrs from table object to active user instance
         user = User(
                 username=sqla_user.username,
@@ -53,7 +53,7 @@ def load_user(user_id):
                 )
         return user
     except Exception as e:
-        log.info(e)
+        log.exception(e)
         return None
     finally:
         session.close()
