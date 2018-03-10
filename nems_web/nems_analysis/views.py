@@ -48,6 +48,7 @@ from nems_web.account_management.views import get_current_user
 from nems_web.run_custom.script_utils import scan_for_scripts
 #from nems.utilities.print import web_print
 from nems_config.defaults import UI_OPTIONS, DEMO_MODE
+from nems.uri import load_resource, save_resource
 n_ui = UI_OPTIONS
 
 try:
@@ -794,6 +795,8 @@ def get_preview():
         figurefile = str(path.figurefile)
         session.close()
 
+
+
     if AWS:
         s3_client = boto3.client('s3')
         try:
@@ -824,17 +827,23 @@ def get_preview():
                         image = str(b64encode(img.read()))[2:-1]
                     return jsonify(image=image)
     else:
+        # Another temporary compatibility hack to convert
+        # s3://... to https://
+        if figurefile.startswith('s3'):
+            prefix = 'https://s3-us-west2.amazonaws.com'
+            parsed = urlparse(figurefile)
+            bucket = parsed.netloc
+            path = parsed.path
+            figurefile = prefix + '/' + bucket + '/' + path
+
         # TODO: this should eventually be the only thing that gets
         #       called - above try/except ugliness is temporary for
         #       backwards compatibility
-        b64img = load_figure(figurefile)
+        image_bytes = load_resource(figurefile)
+        b64img = str(b64encode(image_bytes))[2:-1]
         return jsonify(image=b64img)
 
-# TODO: where will load_figure live? nems_db, nems_baphy, nems_web??
-#       should parse figurefile to figure out if it's
-#       http, s3, or local, then return the image as a b64 string
-
-
+"""
 def load_figure(figurefile):
     if figurefile.startswith('http'):
         # TODO
@@ -905,7 +914,7 @@ def load_figure_bytes(filepath=None, modelspecs=None, load_dir=None,
         img = f.read()
     return img
 
-"""
+
     # TODO: Make this not ugly
 
     if AWS:
