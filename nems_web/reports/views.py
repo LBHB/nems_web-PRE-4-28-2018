@@ -4,7 +4,7 @@ Contents so far:
     status_report
     
 """
-
+import logging
 import time
 import itertools
 from base64 import b64encode
@@ -18,6 +18,8 @@ from nems_web.nems_analysis import app
 from nems_db.db import Session, NarfResults, cluster_tQueue, cluster_Session
 from nems_web.plot_functions.reports import Performance_Report, Fit_Report
 from nems.speed_test import Timer
+
+log = logging.getLogger(__name__)
 
 @app.route('/batch_performance', methods=['GET', 'POST'])
 def batch_performance():

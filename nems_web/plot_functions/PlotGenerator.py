@@ -13,8 +13,6 @@ an html document.
 """
 
 import logging
-log = logging.getLogger(__name__)
-
 import io
 import math
 import statistics
@@ -22,15 +20,12 @@ import itertools
 
 from bokeh.layouts import gridplot
 from bokeh.plotting import figure
-#from bokeh.layouts import widgetbox
 from bokeh.embed import components
 from bokeh.models import (
         ColumnDataSource, HoverTool, SaveTool, WheelZoomTool,
         PanTool, ResetTool, Range1d, FactorRange, Title
         )
-#from bokeh.charts import BoxPlot   #bokeh.charts deprecated by Bokeh
 from bokeh.models.glyphs import VBar, Circle, Glyph
-#from bokeh.models.widgets import DataTable, TableColumn
 import pandas as pd
 import numpy as np
 import scipy.stats as st
@@ -40,6 +35,7 @@ from matplotlib.transforms import Bbox
 
 import nems.utilities.pruffix as prx
 
+log = logging.getLogger(__name__)
 #NOTE: All subclasses of PlotGenerator should be added to the PLOT_TYPES
 #      list for use with web interface
 PLOT_TYPES = [

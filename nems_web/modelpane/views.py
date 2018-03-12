@@ -19,10 +19,8 @@ import numpy as np
 import nems.modules as nm
 import nems.keyword as nk
 import nems.utilities.utils as nu
-
 import nems.utilities.plot as plots
 import nems.main as nems
-#from nems.utilities.print import web_print
 import nems.utilities as ut
 import pkgutil as pk
 

@@ -12,8 +12,6 @@ the display area in the browser.
 """
 
 import logging
-log = logging.getLogger(__name__)
-
 from base64 import b64encode
 
 import pandas.io.sql as psql
@@ -24,6 +22,7 @@ from nems_web.nems_analysis import app
 from nems_db.db import Session, NarfResults, NarfBatches
 import nems_web.plot_functions.PlotGenerator as pg
 
+log = logging.getLogger(__name__)
 
 @app.route('/generate_plot_html')
 def generate_plot_html():

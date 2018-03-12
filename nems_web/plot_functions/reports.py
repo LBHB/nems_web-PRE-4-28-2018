@@ -6,6 +6,7 @@ been separated here.
 """
 
 import io
+import logging
 
 import matplotlib.pyplot as plt, mpld3
 import seaborn as sns
@@ -22,6 +23,8 @@ from bokeh.plotting import figure
 from bokeh.layouts import gridplot
 
 import nems.utilities.pruffix as prx
+
+log = logging.getLogger(__name__)
 
 class Performance_Report():
     def __init__(self, data, batch, models):

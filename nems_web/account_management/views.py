@@ -6,8 +6,6 @@
 """
 
 import logging
-log = logging.getLogger(__name__)
-
 from urllib.parse import urlparse, urljoin
 
 from flask import redirect, request, url_for, render_template, g, Response
@@ -20,9 +18,11 @@ from nems_web.nems_analysis import app
 from nems_db.db import Session, NarfUsers
 from nems_web.account_management.forms import LoginForm, RegistrationForm
 
+log = logging.getLogger(__name__)
 login_manager = LoginManager()
 login_manager.init_app(app)
 login_manager.session_protection = 'basic'
+
 # TODO: how to get this to show up on site through ajax?
 def login_required_callback():
     return Response('Login required')

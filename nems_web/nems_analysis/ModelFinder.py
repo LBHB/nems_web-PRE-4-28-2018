@@ -1,7 +1,9 @@
 """Defines the ModelFinder class, used for parsing modeltree strings."""
-
+import logging
 import ast
 import re
+
+log = logging.getLogger(__name__)
 
 class ModelFinder():
     """Converts a modeltree string from NarfAnalysis into a list of modelnames.

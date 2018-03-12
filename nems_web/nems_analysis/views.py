@@ -22,8 +22,6 @@ any other category (so far, just one function to serve error_log.txt).
 """
 
 import logging
-log = logging.getLogger(__name__)
-
 import copy
 import datetime
 from base64 import b64encode
@@ -44,21 +42,22 @@ from nems_db.db import (
 from nems_web.nems_analysis.ModelFinder import ModelFinder
 from nems_web.plot_functions.PlotGenerator import PLOT_TYPES
 from nems_web.account_management.views import get_current_user
-#from nems.keyword_rules import keyword_test_routine
 from nems_web.run_custom.script_utils import scan_for_scripts
-#from nems.utilities.print import web_print
 from nems_config.defaults import UI_OPTIONS, DEMO_MODE
 from nems.uri import load_resource, save_resource
 n_ui = UI_OPTIONS
+log = logging.getLogger(__name__)
 
-try:
-    import boto3
-    import nems_config.Storage_Config as sc
-    AWS = sc.USE_AWS
-except:
-    from nems_config.defaults import STORAGE_DEFAULTS
-    sc = STORAGE_DEFAULTS
-    AWS = False
+# TODO: delete s3 stuff once new config
+#       system is set up.
+#try:
+#    import boto3
+#    import nems_config.Storage_Config as sc
+#    AWS = sc.USE_AWS
+#except:
+#    from nems_config.defaults import STORAGE_DEFAULTS
+#    sc = STORAGE_DEFAULTS
+#    AWS = False
 
 # TODO: Currently, analysis edit/delete/etc are handled by name,
 #       which requires enforcing a unique name for each analysis.

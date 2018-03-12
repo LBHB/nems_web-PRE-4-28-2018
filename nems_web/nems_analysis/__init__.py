@@ -1,14 +1,14 @@
 import logging
-log = logging.getLogger(__name__)
-werk = logging.getLogger('werkzeug')
-werk.setLevel(logging.ERROR)
 
 from flask import Flask
 from flask_assets import Environment, Bundle
 
+log = logging.getLogger(__name__)
+werk = logging.getLogger('werkzeug')
+werk.setLevel(logging.ERROR)
 
 app = Flask(__name__)
-app.config.from_object('nems_config.defaults.FLASK_DEFAULTS')
+#app.config.from_object('nems_config.defaults.FLASK_DEFAULTS')
 
 assets = Environment(app)
 

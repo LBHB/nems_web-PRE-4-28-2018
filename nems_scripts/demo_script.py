@@ -1,5 +1,10 @@
-"""Demo for using custom script interface to generate a scatter plot to compare
+"Demo for using custom script interface to generate a scatter plot to compare
 modelwise performance.
+
+NOTE: This module and doc need to be updated - in the interim,
+      custom scripts are better run on a local machine using
+      the main nems distribution rather than through the web UI.
+      --jacob 3/11/18
 
 """
 

@@ -1,6 +1,4 @@
 import logging
-log = logging.getLogger(__name__)
-
 import pkgutil
 import importlib
 import inspect
@@ -13,6 +11,7 @@ from nems_web.account_management.views import get_current_user
 
 import nems_web
 
+log =  logging.getLogger(__name__)
 
 # referenced from stackoverflow.com/questions/13317536/
 # get-a-list-of-all-routes-defined-in-the-app
