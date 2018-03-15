@@ -2,7 +2,7 @@
 
 Contents so far:
     status_report
-    
+
 """
 import logging
 import time
@@ -17,22 +17,22 @@ from flask import request, render_template, jsonify
 from nems_web.nems_analysis import app
 from nems_db.db import Session, NarfResults, cluster_tQueue, cluster_Session
 from nems_web.plot_functions.reports import Performance_Report, Fit_Report
-from nems.speed_test import Timer
 
 log = logging.getLogger(__name__)
+
 
 @app.route('/batch_performance', methods=['GET', 'POST'])
 def batch_performance():
     session = Session()
-    
+
     cSelected = request.form['cSelected']
     bSelected = request.form['bSelected'][:3]
     mSelected = request.form['mSelected']
     findAll = request.form['findAll']
-    
+
     cSelected = cSelected.split(',')
     mSelected = mSelected.split(',')
-    
+
     if int(findAll):
         results = psql.read_sql_query(
                 session.query(
@@ -66,35 +66,36 @@ def batch_performance():
             m for m in mSelected
             if m in results_models
             ]
-    
+
     report = Performance_Report(results, bSelected, ordered_models)
     report.generate_plot()
-        
+
     session.close()
     return render_template(
             'batch_performance.html', script=report.script, div=report.div
             )
-    
+
+
 @app.route('/fit_report')
 def fit_report():
     session = Session()
     cluster_session = cluster_Session()
-    
+
     cSelected = request.args.getlist('cSelected[]')
     bSelected = request.args.get('bSelected')[:3]
     mSelected = request.args.getlist('mSelected[]')
-    
+
     multi_index = pd.MultiIndex.from_product(
             [mSelected, cSelected], names=['modelname', 'cellid']
             )
     status = pd.DataFrame(index=multi_index, columns=['yn'])
-    
+
     # TODO: the nested queries are causing the majority of the sluggishness,
     #       especially the cluster_session queries since they have to route
     #       through bhangra. need to figure out a way to do this with 1 query.
     tuples = list(itertools.product(cSelected, [bSelected], mSelected))
-    notes = ['{0}/{1}/{2}'.format(t[0],t[1],t[2]) for t in tuples]
-    
+    notes = ['{0}/{1}/{2}'.format(t[0], t[1], t[2]) for t in tuples]
+
     qdata = psql.read_sql_query(
             cluster_session.query(cluster_tQueue)
             .filter(cluster_tQueue.note.in_(notes))
@@ -115,19 +116,19 @@ def fit_report():
             )
 
     for i, t in enumerate(tuples):
-        yn = 0.3 # missing
+        yn = 0.3  # missing
         try:
             complete = qdata.loc[qdata['note'] == notes[i], 'complete'].iloc[0]
             if complete < 0:
-                yn = 0.4 # in progress
+                yn = 0.4  # in progress
             elif complete == 0:
-                yn = 0.5 # not started
+                yn = 0.5  # not started
             elif complete == 1:
-                yn = 0.6# finished
+                yn = 0.6  # finished
             elif complete == 2:
-                yn = 0 # dead entry
+                yn = 0  # dead entry
             else:
-                pass # unknown value, so leave as missing?
+                pass  # unknown value, so leave as missing?
         except:
             try:
                 result = results.loc[
@@ -139,21 +140,16 @@ def fit_report():
                 yn = 0.6
             except:
                 pass
-        status['yn'].loc[t[2],t[0]] = yn
-    
+        status['yn'].loc[t[2], t[0]] = yn
+
     status.reset_index(inplace=True)
     status = status.pivot(index='cellid', columns='modelname', values='yn')
     status = status[status.columns].astype(float)
     report = Fit_Report(status)
     report.generate_plot()
-    
+
     session.close()
     cluster_session.close()
-    
+
     image = str(b64encode(report.img_str))[2:-1]
     return jsonify(image=image)
-    
-                    
-    
-    
-    

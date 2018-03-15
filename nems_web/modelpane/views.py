@@ -7,7 +7,7 @@ Only used for testing the template right now.
 import copy
 import inspect
 import json
-import pkgutil
+import pkgutil as pk
 
 from flask import (
         request, render_template, Response, jsonify, redirect,
@@ -16,25 +16,13 @@ from flask import (
 import matplotlib.pyplot as plt, mpld3
 import numpy as np
 
-import nems.modules as nm
-import nems.keyword as nk
-import nems.utilities.utils as nu
-import nems.utilities.plot as plots
-import nems.main as nems
-import nems.utilities as ut
-import pkgutil as pk
-
 from nems_web.nems_analysis import app
-from nems_config.defaults import DEMO_MODE
 
-# TODO: reduced size from 12,4 to fit better on smaller res screens, but
-#       need to figure out a good way to resize svgs dynamically for screen size.
-#       (css/js solutions didn't work so far)
-FIGSIZE = (9,3) # width, height for matplotlib figures
+FIGSIZE = (9, 3)  # width, height for matplotlib figures
 mp_stack = None
 
 
-@app.route('/modelpane_view', methods=['GET','POST'])
+@app.route('/modelpane_view', methods=['GET', 'POST'])
 def modelpane_view():
     """Launches Modelpane window to inspect the model fit to the selected
     cell and model."""

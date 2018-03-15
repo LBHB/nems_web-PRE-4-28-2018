@@ -33,7 +33,7 @@ import matplotlib.pyplot as plt, mpld3
 import matplotlib.patches as mpatch
 from matplotlib.transforms import Bbox
 
-import nems.utilities.pruffix as prx
+import nems_web.utilities.pruffix as prx
 
 log = logging.getLogger(__name__)
 #NOTE: All subclasses of PlotGenerator should be added to the PLOT_TYPES
@@ -91,7 +91,7 @@ class PlotGenerator():
                   .format(self.abbr, self.pre, self.suf))
         data.replace(models, self.abbr, inplace=True)
         log.debug("Replaced modelnames with abbreviations.")
-        self.models = self.abbr 
+        self.models = self.abbr
         log.info("Forming data array inside PlotGenerator...")
         self.data = self.form_data_array(data)
 

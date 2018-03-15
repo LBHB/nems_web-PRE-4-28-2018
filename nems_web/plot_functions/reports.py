@@ -22,7 +22,7 @@ from bokeh.models import (
 from bokeh.plotting import figure
 from bokeh.layouts import gridplot
 
-import nems.utilities.pruffix as prx
+import nems_web.utilities.pruffix as prx
 
 log = logging.getLogger(__name__)
 
@@ -32,7 +32,7 @@ class Performance_Report():
         self.abbr, self.pre, self.suf = prx.find_common(models)
         data.replace(models, self.abbr, inplace=True)
         self.data = data
-        
+
     def generate_plot(self):
         tools = [
                 PanTool(), SaveTool(), WheelZoomTool(),
@@ -58,20 +58,20 @@ class Performance_Report():
                 y_range=list(set(self.data['modelname'].values.tolist())),
                 tools=tools, toolbar_location='above',
                 )
-        
+
         p.grid.grid_line_color = None
         p.axis.axis_line_color = None
         p.axis.major_tick_line_color = None
         p.axis.major_label_text_font_size = '10pt'
         p.axis.major_label_standoff = 0
         p.xaxis.visible = False
-        
+
         p.rect(
                 x='cellid', y='modelname', width=1, height=1, source=source,
                 fill_color={'field':'r_test', 'transform':mapper},
                 line_color=None,
                 )
-        
+
         color_bar = ColorBar(
                 color_mapper=mapper, major_label_text_font_size="10pt",
                 ticker=BasicTicker(desired_num_ticks=len(colors)),
@@ -85,10 +85,10 @@ class Performance_Report():
                 ('model: ', '@modelname'),
                 ('cellid: ', '@cellid'),
                 ]
-        
+
         grid = gridplot(p, ncols=1, responsive=True)
         self.script, self.div = components(grid)
-        
+
         # heatmap and other charts deprecated by Bokeh
         #p = HeatMap(self.data, x='cellid', y='modelname', values='r_test',
         #            stat=None, title=(
@@ -100,11 +100,11 @@ class Performance_Report():
         #p.yaxis.major_label_orientation='horizontal'
         #p.xaxis.visible = False
         #self.script, self.div = components(p)
-    
+
 class Fit_Report():
     def __init__(self, data):
         self.data = data
-        
+
     def generate_plot(self):
         array = self.data.values
         cols = self.data.columns.tolist()
@@ -118,10 +118,10 @@ class Fit_Report():
         minor_xticks = np.arange(-0.5, len(cols), 1)
         minor_yticks = np.arange(-0.5, len(rows), 1)
         extent = self.extents(xticks) + self.extents(yticks)
-        
+
         p = plt.figure(figsize=(len(cols),len(rows)/4))
         img = plt.imshow(
-                array, aspect='auto', origin='lower', 
+                array, aspect='auto', origin='lower',
                 cmap=plt.get_cmap('RdBu'), interpolation='none',
                 extent=extent,
                 )
@@ -129,7 +129,7 @@ class Fit_Report():
         ax = plt.gca()
 
         abbr, pre, suf = prx.find_common(cols)
-        
+
         ax.set_ylabel('')
         ax.set_xlabel('Model, prefix: {0}, suffix: {1}'.format(pre, suf))
         ax.set_yticks(yticks)
@@ -153,15 +153,15 @@ class Fit_Report():
         #cax.set_position(
         #        [current_pos.x0, 1, current_pos.width, current_pos.height]
         #        )
-        
-        
+
+
         img = io.BytesIO()
         plt.savefig(img, bbox_inches='tight')
         #html = mpld3.fig_to_html(p)
         plt.close(p)
         img.seek(0)
         self.img_str = img.read()
-        
+
     def extents(self, f):
         # reference:
         # https://bl.ocks.org/fasiha/eff0763ca25777ec849ffead370dc907

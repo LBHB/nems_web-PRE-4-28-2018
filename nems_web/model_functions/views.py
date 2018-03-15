@@ -17,22 +17,27 @@ See Also:
 """
 
 import logging
-log = logging.getLogger(__name__)
 
 import ast
 from flask import jsonify, request
 from flask_login import login_required
 
 from nems_web.nems_analysis import app
-from nems_db.db import NarfResults, enqueue_models, update_results_table
-import nems.main as nems
+from nems_db.db import enqueue_models
 from nems_web.account_management.views import get_current_user
-from nems.keyword_rules import keyword_test_routine
+
+log = logging.getLogger(__name__)
+
 
 @app.route('/fit_single_model')
 def fit_single_model_view():
     """Call lib.nems_main.fit_single_model with user selections as args."""
 
+    return jsonify(r_est='This function no longer supported.',
+                   r_val='Awaiting removal from interface.')
+
+    # Deprecated
+    '''
     user = get_current_user()
 
     cSelected = request.args.getlist('cSelected[]')
@@ -41,17 +46,10 @@ def fit_single_model_view():
 
     # Disallow multiple cell/model selections for a single fit.
     if (len(cSelected) > 1) or (len(mSelected) > 1):
-        return jsonify(r_est='error',r_val='more than 1 cell and/or model')
+        return jsonify(r_est='error', r_val='more than 1 cell and/or model')
 
-    # turn off keyword rules tests for now
-    #try:
-    #    keyword_test_routine(mSelected[0])
-    #except Exception as e:
-    #    web_log.info(e)
-    #    web_log.info('Fit failed.')
-    #    raise e
 
-    web_log.info(
+    log.info(
             "Beginning model fit -- this may take several minutes."
             "Please wait for a success/failure response."
             )
@@ -79,6 +77,8 @@ def fit_single_model_view():
     stack = None
 
     return jsonify(r_est=r_est, r_val=r_val)
+    '''
+
 
 @app.route('/enqueue_models')
 @login_required
@@ -111,6 +111,7 @@ def enqueue_models_view():
             )
     return jsonify(data=True)
 
+
 @app.route('/add_jerb_kv')
 def add_jerb_kv():
     """Take key, list of values, and existing JSON object (query) from input
@@ -129,9 +130,8 @@ def add_jerb_kv():
     if not values:
         val_list = []
     else:
-        values = values.replace(' ','')
+        values = values.replace(' ', '')
         val_list = values.split(',')
 
     query[key] = val_list
     return jsonify(newQuery=query)
-

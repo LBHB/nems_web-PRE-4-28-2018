@@ -26,6 +26,7 @@ import copy
 import datetime
 from base64 import b64encode
 from urllib.parse import urlparse
+from collections import namedtuple
 
 from flask import (
         render_template, jsonify, request,
@@ -43,9 +44,9 @@ from nems_web.nems_analysis.ModelFinder import ModelFinder
 from nems_web.plot_functions.PlotGenerator import PLOT_TYPES
 from nems_web.account_management.views import get_current_user
 from nems_web.run_custom.script_utils import scan_for_scripts
-from nems_config.defaults import UI_OPTIONS, DEMO_MODE
+#from nems_config.defaults import UI_OPTIONS, DEMO_MODE
 from nems.uri import load_resource, save_resource
-n_ui = UI_OPTIONS
+#n_ui = UI_OPTIONS
 log = logging.getLogger(__name__)
 
 # TODO: delete s3 stuff once new config
@@ -59,14 +60,30 @@ log = logging.getLogger(__name__)
 #    sc = STORAGE_DEFAULTS
 #    AWS = False
 
-# TODO: Currently, analysis edit/delete/etc are handled by name,
-#       which requires enforcing a unique name for each analysis.
-#       Should re-work selector to includ id with each name so that
-#       id can be used instead, since it's the primary key.
-#       But each analysis should probably have a unique name anyway,
-#       so low priority change.
 
-
+# TODO: figure out where to move this for easier config
+#       namedtuple is a temporary hack to force object-like attributes
+ui_opt = namedtuple('ui_opt', 'cols rowlimit sort measurelist required_cols detailcols iso snr snri')
+n_ui = ui_opt(
+    cols=['r_test', 'r_fit', 'n_parms'],
+    rowlimit=500,
+    sort='cellid',
+    # specifies which columns from narf results can be used to quantify
+    # performance for plots
+    measurelist=[
+            'r_test', 'r_ceiling', 'r_fit', 'r_active', 'mse_test',
+            'mse_fit', 'mi_test', 'mi_fit', 'nlogl_test',
+            'nlogl_fit', 'cohere_test', 'cohere_fit',
+            ],
+    # any columns in this list will always show on results table
+    required_cols=['cellid', 'modelname'],
+    # specifies which columns to display in 'details' tab for analysis
+    detailcols=['id', 'status', 'question', 'answer'],
+    # default minimum values for filtering out cells before plotting
+    iso=0,
+    snr=0,
+    snri=0,
+    )
 
 ##################################################################
 ####################   UI UPDATE FUNCTIONS  ######################
