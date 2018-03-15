@@ -782,19 +782,6 @@ def get_preview():
     cSelected = request.args.getlist('cSelected[]')
     mSelected = request.args.getlist('mSelected[]')
 
-    ### DEPRECATED ? ###
-    # if using demo database, get preview image from aws public bucket
-    #if DEMO_MODE:
-    #    s3_client = boto3.client('s3')
-    #    key = (
-    #            'nems_saved_images/batch291/{0}/{1}.png'
-    #            .format(cSelected[0], mSelected[0])
-    #            )
-    #    log.info("Inside get_preview, passed DEMO_MODE check. Key is: {0}".format(key))
-    #    fileobj = s3_client.get_object(Bucket='nemspublic', Key=key)
-    #    image=str(b64encode(fileobj['Body'].read()))[2:-1]
-    #    return jsonify(image=image)
-
     figurefile = None
     path = (
             session.query(NarfResults)
@@ -811,53 +798,21 @@ def get_preview():
         figurefile = str(path.figurefile)
         session.close()
 
+    # Another temporary compatibility hack to convert
+    # s3://... to https://
+    if figurefile.startswith('s3'):
+        prefix = 'https://s3-us-west2.amazonaws.com'
+        parsed = urlparse(figurefile)
+        bucket = parsed.netloc
+        path = parsed.path
+        figurefile = prefix + '/' + bucket + '/' + path
 
-
-    if AWS:
-        s3_client = boto3.client('s3')
-        try:
-            key = figurefile[len(sc.DIRECTORY_ROOT):]
-            fileobj = s3_client.get_object(Bucket=sc.PRIMARY_BUCKET, Key=key)
-            image = str(b64encode(fileobj['Body'].read()))[2:-1]
-
-            return jsonify(image=image)
-        except Exception as e:
-            log.exception(e)
-            log.info("key was: {0}".format(path.figurefile[len(sc.DIRECTORY_ROOT)]))
-            try:
-                key = figurefile[len(sc.DIRECTORY_ROOT)-1:]
-                fileobj = s3_client.get_object(
-                        Bucket=sc.PRIMARY_BUCKET,
-                        Key=key
-                        )
-                image = str(b64encode(fileobj['Body'].read()))[2:-1]
-                return jsonify(image=image)
-            except Exception as e:
-                log.exception(e)
-                try:
-                    b64img = load_figure(figurefile)
-                    return jsonify(image=b64img)
-                except Exception as e:
-                    log.exception(e)
-                    with open(app.static_folder + '/lbhb_logo.png', 'r+b') as img:
-                        image = str(b64encode(img.read()))[2:-1]
-                    return jsonify(image=image)
-    else:
-        # Another temporary compatibility hack to convert
-        # s3://... to https://
-        if figurefile.startswith('s3'):
-            prefix = 'https://s3-us-west2.amazonaws.com'
-            parsed = urlparse(figurefile)
-            bucket = parsed.netloc
-            path = parsed.path
-            figurefile = prefix + '/' + bucket + '/' + path
-
-        # TODO: this should eventually be the only thing that gets
-        #       called - above try/except ugliness is temporary for
-        #       backwards compatibility
-        image_bytes = load_resource(figurefile)
-        b64img = str(b64encode(image_bytes))[2:-1]
-        return jsonify(image=b64img)
+    # TODO: this should eventually be the only thing that gets
+    #       called - above try/except ugliness is temporary for
+    #       backwards compatibility
+    image_bytes = load_resource(figurefile)
+    b64img = str(b64encode(image_bytes))[2:-1]
+    return jsonify(image=b64img)
 
 """
 def load_figure(figurefile):

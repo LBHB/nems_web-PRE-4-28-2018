@@ -1,4 +1,5 @@
 import logging
+import os
 
 from flask import Flask
 from flask_assets import Environment, Bundle
@@ -8,7 +9,13 @@ werk = logging.getLogger('werkzeug')
 werk.setLevel(logging.ERROR)
 
 app = Flask(__name__)
-#app.config.from_object('nems_config.defaults.FLASK_DEFAULTS')
+# Specify environment variables that are allowed for flask config.
+# Could pass os.environ directly to app.config.update(), but not
+# sure if that would be safe / might cause conflicts with
+# environment variables set for other reasons.
+defined = ['DEBUG', 'CSRF_ENABLED', 'CSRF_SESSION_KEY', 'SECRET_KEY']
+config = {k: os.environ[k] for k in defined if k in os.environ.keys()}
+app.config.update(config)
 
 assets = Environment(app)
 
