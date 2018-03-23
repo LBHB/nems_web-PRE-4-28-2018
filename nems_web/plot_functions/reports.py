@@ -8,8 +8,6 @@ been separated here.
 import io
 import logging
 
-import matplotlib
-matplotlib.use('agg')
 import matplotlib.pyplot as plt
 import numpy as np
 
@@ -25,6 +23,7 @@ from bokeh.layouts import gridplot
 import nems_web.utilities.pruffix as prx
 
 log = logging.getLogger(__name__)
+plt.switch_backend('agg')
 
 
 class Performance_Report():
