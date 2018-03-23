@@ -5,17 +5,15 @@ Contents so far:
 
 """
 import logging
-import time
 import itertools
 from base64 import b64encode
 
 import pandas.io.sql as psql
 import pandas as pd
-import numpy as np
 from flask import request, render_template, jsonify
 
 from nems_web.nems_analysis import app
-from nems_db.db import Session, NarfResults, cluster_tQueue, cluster_Session
+from nems_db.db import Session, NarfResults, tQueue
 from nems_web.plot_functions.reports import Performance_Report, Fit_Report
 
 log = logging.getLogger(__name__)
@@ -79,7 +77,6 @@ def batch_performance():
 @app.route('/fit_report')
 def fit_report():
     session = Session()
-    cluster_session = cluster_Session()
 
     cSelected = request.args.getlist('cSelected[]')
     bSelected = request.args.get('bSelected')[:3]
@@ -90,17 +87,14 @@ def fit_report():
             )
     status = pd.DataFrame(index=multi_index, columns=['yn'])
 
-    # TODO: the nested queries are causing the majority of the sluggishness,
-    #       especially the cluster_session queries since they have to route
-    #       through bhangra. need to figure out a way to do this with 1 query.
     tuples = list(itertools.product(cSelected, [bSelected], mSelected))
     notes = ['{0}/{1}/{2}'.format(t[0], t[1], t[2]) for t in tuples]
 
     qdata = psql.read_sql_query(
-            cluster_session.query(cluster_tQueue)
-            .filter(cluster_tQueue.note.in_(notes))
+            session.query(tQueue)
+            .filter(tQueue.note.in_(notes))
             .statement,
-            cluster_session.bind,
+            session.bind,
             )
 
     results = psql.read_sql_query(
@@ -149,7 +143,6 @@ def fit_report():
     report.generate_plot()
 
     session.close()
-    cluster_session.close()
 
     image = str(b64encode(report.img_str))[2:-1]
     return jsonify(image=image)

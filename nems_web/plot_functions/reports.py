@@ -8,10 +8,8 @@ been separated here.
 import io
 import logging
 
-import matplotlib.pyplot as plt, mpld3
-import seaborn as sns
+import matplotlib.pyplot as plt
 import numpy as np
-import scipy as scp
 
 from bokeh.embed import components
 from bokeh.models import (
@@ -25,6 +23,7 @@ from bokeh.layouts import gridplot
 import nems_web.utilities.pruffix as prx
 
 log = logging.getLogger(__name__)
+
 
 class Performance_Report():
     def __init__(self, data, batch, models):
@@ -50,10 +49,8 @@ class Performance_Report():
                 )
         source = ColumnDataSource(self.data)
         p = figure(
-                title=(
-                "batch {0}, model prefix: {1}, suffix: {2}"
-                .format(self.batch, self.pre, self.suf)
-                ),
+                title=("batch {0}, model prefix: {1}, suffix: {2}"
+                       .format(self.batch, self.pre, self.suf)),
                 x_range=list(set(self.data['cellid'].values.tolist())),
                 y_range=list(set(self.data['modelname'].values.tolist())),
                 tools=tools, toolbar_location='above',
@@ -68,7 +65,7 @@ class Performance_Report():
 
         p.rect(
                 x='cellid', y='modelname', width=1, height=1, source=source,
-                fill_color={'field':'r_test', 'transform':mapper},
+                fill_color={'field': 'r_test', 'transform': mapper},
                 line_color=None,
                 )
 
@@ -76,7 +73,7 @@ class Performance_Report():
                 color_mapper=mapper, major_label_text_font_size="10pt",
                 ticker=BasicTicker(desired_num_ticks=len(colors)),
                 formatter=NumeralTickFormatter(format="0.00"),
-                label_standoff=10, border_line_color=None, location=(0,0),
+                label_standoff=10, border_line_color=None, location=(0, 0),
                 )
 
         p.add_layout(color_bar, 'right')
@@ -89,17 +86,6 @@ class Performance_Report():
         grid = gridplot(p, ncols=1, responsive=True)
         self.script, self.div = components(grid)
 
-        # heatmap and other charts deprecated by Bokeh
-        #p = HeatMap(self.data, x='cellid', y='modelname', values='r_test',
-        #            stat=None, title=(
-        #                    "batch {0}, model prefix: {1}, suffix: {2}"
-        #                    .format(self.batch, self.pre, self.suf)
-        #                    ), hover_text='r_test',
-        #            tools=tools, responsive=True,
-        #            )
-        #p.yaxis.major_label_orientation='horizontal'
-        #p.xaxis.visible = False
-        #self.script, self.div = components(p)
 
 class Fit_Report():
     def __init__(self, data):
@@ -109,17 +95,14 @@ class Fit_Report():
         array = self.data.values
         cols = self.data.columns.tolist()
         rows = self.data.index.tolist()
-        # Try upsampling if array dimensions too small to avoid interp
-        # note: didn't work very well on tests.
-        #if (len(rows) < 20) or (len(cols) < 20):
-        #    array = scp.misc.imresize(array, 20.0, interp='nearest')
+
         xticks = range(len(cols))
         yticks = range(len(rows))
         minor_xticks = np.arange(-0.5, len(cols), 1)
         minor_yticks = np.arange(-0.5, len(rows), 1)
         extent = self.extents(xticks) + self.extents(yticks)
 
-        p = plt.figure(figsize=(len(cols),len(rows)/4))
+        p = plt.figure(figsize=(len(cols), len(rows)/4))
         img = plt.imshow(
                 array, aspect='auto', origin='lower',
                 cmap=plt.get_cmap('RdBu'), interpolation='none',
@@ -154,10 +137,8 @@ class Fit_Report():
         #        [current_pos.x0, 1, current_pos.width, current_pos.height]
         #        )
 
-
         img = io.BytesIO()
         plt.savefig(img, bbox_inches='tight')
-        #html = mpld3.fig_to_html(p)
         plt.close(p)
         img.seek(0)
         self.img_str = img.read()
