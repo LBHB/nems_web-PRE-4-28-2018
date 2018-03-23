@@ -9,7 +9,7 @@ import io
 import logging
 
 import matplotlib
-matplotlib.use('Agg')
+matplotlib.use('agg')
 import matplotlib.pyplot as plt
 import numpy as np
 
