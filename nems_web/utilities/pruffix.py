@@ -18,8 +18,14 @@ def find_prefix(s_list):
         # log.debug('before for loop, prefix = %s'%prefix)
         for j in range(len(s_list) - 1):
             # look at ith item of each string in list, in order
-            a = s_list[j][i]
-            b = s_list[j + 1][i]
+            if i < len(s_list[j]):
+                a = s_list[j][i]
+            else:
+                a = ''
+            if i<len(s_list[j+1]):
+                b = s_list[j + 1][i]
+            else:
+                b = ''
             # log.debug('for loop, a = %s and b = %s'%(a, b))
             if a != b:
                 test = False
