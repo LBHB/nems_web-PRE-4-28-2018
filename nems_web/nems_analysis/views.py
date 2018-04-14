@@ -36,7 +36,7 @@ import pandas.io.sql as psql
 from sqlalchemy.orm import Query
 from sqlalchemy import desc, asc, or_
 
-from nems_web.nems_analysis import app
+from nems_web.nems_analysis import app, bokeh_version
 from nems_db.db import (
         Session, NarfAnalysis, NarfBatches, NarfResults, sBatch, NarfUsers,
         )
@@ -220,7 +220,7 @@ def main_view():
             sortlist=sortlist, defaultsort=defaultsort,statuslist=statuslist,
             taglist=taglist, plotTypeList=plotTypeList, username=user.username,
             seclvl = int(user.sec_lvl), iso=n_ui.iso, snr=n_ui.snr,
-            snri=n_ui.snri, scripts=scriptList,
+            snri=n_ui.snri, scripts=scriptList, bokeh_version=bokeh_version
             )
 
 

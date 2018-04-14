@@ -1,5 +1,6 @@
 import logging
 import os
+import pkg_resources as pkg
 
 from flask import Flask
 from flask_assets import Environment, Bundle
@@ -24,6 +25,7 @@ js = Bundle(
         'js/modelpane/modelpane.js', output='gen/packed.%(version)s.js'
         )
 
+# TODO
 # disabled for now because css files are overwriting each other, so styles
 # for different pages end up merging. need to add classes/ids to individual
 # css files so they don't conflict.
@@ -34,6 +36,10 @@ js = Bundle(
 
 #assets.register('css_all', css)
 assets.register('js_all', js)
+
+# get current bokeh version. all html templates should use this
+# inside the bokeh cdn url to make sure versions stay synced after updates.
+bokeh_version = pkg.get_distribution("bokeh").version
 
 # these don't get used for anything within this module,
 # just have to be loaded when app is initiated
@@ -47,81 +53,3 @@ import nems_web.upload.views
 import nems_web.table_details.views
 import nems_web.run_custom.views
 import nems_web.admin.views
-
-
-# Removing socket io stuff for now - web_print not really used at the
-# moment since it was having issues, and some users have reported
-# performance problems depending on socketio settings. So unless needed
-# in the future, leaving disabled and hopefully will improve performance.
-# -jacob 1/13/2018
-
-#import sys
-#from io import StringIO
-#import threading
-#from flask_socketio import SocketIO
-#from flask import url_for
-#from nems.utilities.output import SplitOutput
-"""
-socketio = SocketIO(app, async_mode='threading')
-thread = None
-
-if app.config['COPY_PRINTS']:
-    stringio = StringIO()
-    orig_stdout = sys.stdout
-    sys.stdout = SplitOutput(stringio, orig_stdout)
-
-# redirect output of stdout to py_console div in web browser
-
-def py_console():
-    while app.config['COPY_PRINTS']:
-        # Set sampling rate for console reader in seconds
-        socketio.sleep(1)
-        try:
-            data = stringio.getvalue()
-            lines = data.split('\n')
-            stringio.truncate(0)
-            for line in lines:
-                if line:
-                    # adds timestamp, which is nice, but messes with line break
-                    #now = datetime.datetime.now()
-                    #line = '{0}:{1}:{2}: {3}'.format(
-                    #            now.hour, now.minute, now.second, line,
-                    #            )
-                    line = line.replace('\n', '<br>')
-                    socketio.emit(
-                            'console_update',
-                            {'data':line},
-                            namespace='/py_console',
-                            )
-        except Exception as e:
-            print(e)
-            pass
-
-# start looping py_console() in the background when socket is connected
-# but only if COPY_PRINTS is set to true
-@socketio.on('connect', namespace='/py_console')
-def start_logging():
-    if not app.config['COPY_PRINTS']:
-        return
-    global thread
-    if thread is None:
-        print('Initializing console reader...')
-        thread = socketio.start_background_task(target=py_console)
-    socketio.emit(
-            'console_update',
-            {'data':'console connected or re-connected'},
-            namespace='/py_console',
-            )
-
-def track_thread_count():
-    while True:
-        socketio.sleep(180)
-        if threading.active_count() >= 10:
-            print("current thread count: ")
-            print(threading.active_count())
-            print("active threads: ")
-            for t in threading.enumerate():
-                print(t.name)
-
-socketio.start_background_task(target=track_thread_count)
-"""

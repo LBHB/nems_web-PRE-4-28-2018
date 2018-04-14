@@ -12,7 +12,7 @@ import pandas.io.sql as psql
 import pandas as pd
 from flask import request, render_template, jsonify
 
-from nems_web.nems_analysis import app
+from nems_web.nems_analysis import app, bokeh_version
 from nems_db.db import Session, NarfResults, tQueue
 from nems_web.plot_functions.reports import Performance_Report, Fit_Report
 
@@ -70,7 +70,8 @@ def batch_performance():
 
     session.close()
     return render_template(
-            'batch_performance.html', script=report.script, div=report.div
+            'batch_performance.html', script=report.script, div=report.div,
+            bokeh_version=bokeh_version,
             )
 
 
