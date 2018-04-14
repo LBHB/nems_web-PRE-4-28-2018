@@ -784,9 +784,6 @@ def get_preview():
     cSelected = request.args.getlist('cSelected[]')
     mSelected = request.args.getlist('mSelected[]')
 
-    print("getting preview for: \nbatch: {}, \ncell: {}, \nmodel: {}"
-          .format(bSelected, cSelected, mSelected))
-
     figurefile = None
     path = (
             session.query(NarfResults)
@@ -795,8 +792,6 @@ def get_preview():
             .filter(NarfResults.modelname.in_(mSelected))
             .first()
             )
-
-    print("path ended up being: {}".format(path))
 
     if not path:
         session.close()
