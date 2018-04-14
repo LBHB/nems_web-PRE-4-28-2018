@@ -412,14 +412,14 @@ $(document).ready(function(){
             var cell_link = $SCRIPT_ROOT + '/cell_details/';
             var model_link = $SCRIPT_ROOT + '/model_details/';
             $(this).children().eq(0).html(
-                    "<p id='" + cellid + "'>" + cellid + "</p>"
+                    "<p cellid='" + cellid + "'>" + cellid + "</p>"
                     );
                     // can switch this back in when figure out a good way to toggle
                     // links on and off
                     //"<a href='" + cell_link + cellid + "' target='_blank'"
                     //+ "id='" + cellid + "'>" + cellid + "</a>"
             $(this).children().eq(1).html(
-                    "<p id='" + modelname + "'>" + modelname + "</p>"
+                    "<p modelname='" + modelname + "'>" + modelname + "</p>"
                     );
                     //"<a href='" + model_link + modelname + "' "
                     //+ "id='" + modelname + "'>" + modelname + "</a>"
@@ -856,10 +856,10 @@ $(document).ready(function(){
         
         // have to change .children('p')  back to 'a' if table links put back in
         $(".dataframe tr.selectedRow").each(function(){
-            cSelected.push($(this).children().eq(0).children('p').attr('id'));
+            cSelected.push($(this).children().eq(0).children('p').attr('cellid'));
         });
         $(".dataframe tr.selectedRow").each(function(){
-            mSelected.push($(this).children().eq(1).children('p').attr('id'));
+            mSelected.push($(this).children().eq(1).children('p').attr('modelname'));
         });
 
         // only proceed if selections have been made

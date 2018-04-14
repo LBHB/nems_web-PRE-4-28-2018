@@ -33,6 +33,7 @@ from flask import (
         )
 from flask_login import login_required
 import pandas.io.sql as psql
+import pandas as pd
 from sqlalchemy.orm import Query
 from sqlalchemy import desc, asc, or_
 
@@ -383,9 +384,10 @@ def update_results():
             .limit(rowlimit).statement,
             session.bind
             )
-    resultstable = results.to_html(
-            index=False, classes="table-hover table-condensed",
-            )
+    with pd.option_context('display.max_colwidth', -1):
+        resultstable = results.to_html(
+                index=False, classes="table-hover table-condensed",
+                )
 
     session.close()
 
@@ -782,6 +784,9 @@ def get_preview():
     cSelected = request.args.getlist('cSelected[]')
     mSelected = request.args.getlist('mSelected[]')
 
+    print("getting preview for: \nbatch: {}, \ncell: {}, \nmodel: {}"
+          .format(bSelected, cSelected, mSelected))
+
     figurefile = None
     path = (
             session.query(NarfResults)
@@ -790,6 +795,8 @@ def get_preview():
             .filter(NarfResults.modelname.in_(mSelected))
             .first()
             )
+
+    print("path ended up being: {}".format(path))
 
     if not path:
         session.close()
@@ -813,121 +820,6 @@ def get_preview():
     image_bytes = load_resource(figurefile)
     b64img = str(b64encode(image_bytes))[2:-1]
     return jsonify(image=b64img)
-
-"""
-def load_figure(figurefile):
-    if figurefile.startswith('http'):
-        # TODO
-        # use nems_db api to retrieve figure from file server
-        img = 'read through api'
-    elif figurefile.startswith('s3'):
-        # TODO: old figurefile entries in MYSQL don't have s3:// in them
-        s3_client = boto3.client('s3')
-        parsed = urlparse(figurefile)
-        bucket = parsed.netloc
-        key = parsed.path
-        if key.startswith('/'):
-            key = key.strip('/')
-        log.warn("Attemping to load figure using bucket: {}\n"
-                 "and key: {}".format(bucket, key))
-        fileobj = s3_client.get_object(Bucket=bucket, Key=key)
-        img = fileobj['Body'].read()
-    else:
-        # assume file is local and figurepath is full, absolute path
-        img = load_figure_bytes(filepath=figurefile, format='png')
-    # after bytes string read by one of the methods above,
-    # encode with b64 and remove first 2 characters and last character.
-    # (Not really sure why it's necessary, but javascript freaks out if
-    #  those bits are there).
-    image = str(b64encode(img))[2:-1]
-    return image
-
-# temporarily copied from nems dev
-def load_figure_bytes(filepath=None, modelspecs=None, load_dir=None,
-                      format='png'):
-    '''
-    Loads a saved figure image as a bytes object that can be used
-    by the web UI or other functions.
-
-    Arguments
-    --------
-    filepath : str or fileobj
-        Specifies the location where the image was stored.
-        If not provided, modelspecs must be given instead. If a string,
-        it should be a complete, absolute path to the save location.
-
-    modelspecs : list
-        A list of modelspecs that can be used to determine a filepath
-        based on nems.modelspec.get_modelspec_longname() and load_dir.
-
-    load_dir : str
-        Specifies the base directory in which to save the figure,
-        if modelspecs are used.
-
-    format : str
-        Specifies the file format that was used to save the figure.
-
-    Returns
-    -------
-    img : bytes object
-        Contains the raw data for the loaded image.
-
-    '''
-    #if filepath and not modelspecs:
-    fname = filepath
-    #elif modelspecs and not filepath:
-    #    fname = _get_figure_filepath(load_dir, modelspecs, format)
-    #else:
-    #    raise ValueError("load_figure_img() must be provided either"
-    #                     "a filepath or a list of modelspecs.")
-    #logging.info("Loading figure image from: {}".format(fname))
-    with open(fname, 'r+b') as f:
-        img = f.read()
-    return img
-
-
-    # TODO: Make this not ugly
-
-    if AWS:
-        s3_client = boto3.client('s3')
-        try:
-            key = figurefile[len(sc.DIRECTORY_ROOT):]
-            fileobj = s3_client.get_object(Bucket=sc.PRIMARY_BUCKET, Key=key)
-            image = str(b64encode(fileobj['Body'].read()))[2:-1]
-
-            return jsonify(image=image)
-        except Exception as e:
-            log.info(e)
-            log.info("key was: {0}".format(path.figurefile[len(sc.DIRECTORY_ROOT)]))
-            try:
-                key = figurefile[len(sc.DIRECTORY_ROOT)-1:]
-                fileobj = s3_client.get_object(
-                        Bucket=sc.PRIMARY_BUCKET,
-                        Key=key
-                        )
-                image = str(b64encode(fileobj['Body'].read()))[2:-1]
-                return jsonify(image=image)
-            except Exception as e:
-                log.info(e)
-                with open(app.static_folder + '/lbhb_logo.png', 'r+b') as img:
-                    image = str(b64encode(img.read()))[2:-1]
-                return jsonify(image=image)
-    else:
-        try:
-            with open('/' + figurefile, 'r+b') as img:
-                image = str(b64encode(img.read()))[2:-1]
-            return jsonify(image=image)
-        except:
-            try:
-                with open(figurefile, 'r+b') as img:
-                    image = str(b64encode(img.read()))[2:-1]
-                return jsonify(image=image)
-            except Exception as e:
-                log.info(e)
-                with open(app.static_folder + '/lbhb_logo.png', 'r+b') as img:
-                    image = str(b64encode(img.read()))[2:-1]
-                return jsonify(image=image)
-"""
 
 
 ###############################################################################
