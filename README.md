@@ -1,3 +1,7 @@
+# Permanently merged into the nems_db repository at github.com/LBHB/nems_db #
+
+
+
 # README #
 
 NEMS is the Neural Encoding Model System, a set of tools for fitting computational models for the neural encoding of sensory stimuli.  Written in Python, migrated from a Matlab tool designed to do something similar (NARF).
